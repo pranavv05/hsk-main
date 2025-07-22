@@ -29,7 +29,7 @@ apiClient.interceptors.request.use(
 
 export async function registerUser(userData: any) {
   try {
-    const response = await apiClient.post('/auth/register', userData);
+    const response = await apiClient.post('/api/auth/register', userData);
     const { user, token } = response.data;
     if (token) {
       localStorage.setItem('hindu_seva_kendra_token', token);
@@ -43,7 +43,7 @@ export async function registerUser(userData: any) {
 
 export async function loginUser(email: string, password: string) {
   try {
-    const response = await apiClient.post('/auth/login', { email, password });
+    const response = await apiClient.post('/api/auth/login', { email, password });
     const { user, token } = response.data;
     if (token) {
       localStorage.setItem('hindu_seva_kendra_token', token);
@@ -60,7 +60,7 @@ export async function loginUser(email: string, password: string) {
 
 export async function fetchUserServiceRequests() {
     try {
-        const response = await apiClient.get('/requests');
+        const response = await apiClient.get('/api/requests');
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to fetch service requests');
@@ -69,7 +69,7 @@ export async function fetchUserServiceRequests() {
 
 export async function createServiceRequest(requestData: any) {
     try {
-        const response = await apiClient.post('/requests', requestData);
+        const response = await apiClient.post('/api/requests', requestData);
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to create service request');
@@ -78,7 +78,7 @@ export async function createServiceRequest(requestData: any) {
 
 export async function cancelServiceRequest(requestId: string) {
   try {
-    const response = await apiClient.patch(`/requests/${requestId}/cancel`);
+    const response = await apiClient.patch(`/api/requests/${requestId}/cancel`);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to cancel service request');
@@ -90,7 +90,7 @@ export async function cancelServiceRequest(requestId: string) {
 
 export async function fetchVendorProfile() {
   try {
-    const response = await apiClient.get('/vendors/profile');
+    const response = await apiClient.get('/api/vendors/profile');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch vendor profile');
@@ -100,7 +100,7 @@ export async function fetchVendorProfile() {
 // THIS IS THE CORRECT, FINAL VERSION FOR FILE UPLOADS
 export async function updateVendorProfile(profileData: FormData) {
     try {
-        const response = await apiClient.put('/vendors/profile', profileData, {
+        const response = await apiClient.put('/api/vendors/profile', profileData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         return response.data;
@@ -111,7 +111,7 @@ export async function updateVendorProfile(profileData: FormData) {
 
 export async function fetchVendorServiceRequests() {
   try {
-    const response = await apiClient.get('/requests/vendor');
+    const response = await apiClient.get('/api/requests/vendor');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch requests');
@@ -120,7 +120,7 @@ export async function fetchVendorServiceRequests() {
 
 export async function acceptServiceRequest(requestId: string) {
   try {
-    const response = await apiClient.patch(`/requests/${requestId}/accept`);
+    const response = await apiClient.patch(`/api/requests/${requestId}/accept`);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to accept request');
@@ -129,7 +129,7 @@ export async function acceptServiceRequest(requestId: string) {
 
 export async function completeServiceRequest(requestId: string) {
   try {
-    const response = await apiClient.patch(`/requests/${requestId}/complete`);
+    const response = await apiClient.patch(`/api/requests/${requestId}/complete`);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to complete request');
@@ -141,7 +141,7 @@ export async function completeServiceRequest(requestId: string) {
 
 export async function fetchAdminStats() {
   try {
-    const response = await apiClient.get('/admin/stats');
+    const response = await apiClient.get('/api/admin/stats');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch admin stats');
@@ -150,7 +150,7 @@ export async function fetchAdminStats() {
 
 export async function fetchAdminVendors() {
   try {
-    const response = await apiClient.get('/admin/vendors');
+    const response = await apiClient.get('/api/admin/vendors');
     return response.data;
   } catch (error: any)    {
     throw new Error(error.response?.data?.message || 'Failed to fetch vendors');
@@ -159,7 +159,7 @@ export async function fetchAdminVendors() {
 
 export async function assignVendorToRequest(requestId: string, vendorId: string) {
     try {
-        const response = await apiClient.patch(`/admin/requests/${requestId}/assign`, { vendorId });
+        const response = await apiClient.patch(`/api/admin/requests/${requestId}/assign`, { vendorId });
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to assign vendor');
@@ -168,7 +168,7 @@ export async function assignVendorToRequest(requestId: string, vendorId: string)
 
 export async function toggleVendorVerification(vendorId: string, isVerified: boolean) {
     try {
-        const response = await apiClient.patch(`/admin/vendors/${vendorId}/verify`, { isVerified });
+        const response = await apiClient.patch(`/api/admin/vendors/${vendorId}/verify`, { isVerified });
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to update verification');
@@ -177,7 +177,7 @@ export async function toggleVendorVerification(vendorId: string, isVerified: boo
 
 export async function fetchAllServiceRequests() {
   try {
-    const response = await apiClient.get('/requests/all');
+    const response = await apiClient.get('/api/requests/all');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch all requests');
@@ -189,7 +189,7 @@ export async function fetchAllServiceRequests() {
 
 export async function fetchServices() {
   try {
-    const response = await apiClient.get('/public/services');
+    const response = await apiClient.get('/api/public/services');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch services');
@@ -198,7 +198,7 @@ export async function fetchServices() {
 
 export async function fetchTestimonials() {
   try {
-    const response = await apiClient.get('/public/testimonials');
+    const response = await apiClient.get('/api/public/testimonials');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch testimonials');
@@ -207,7 +207,7 @@ export async function fetchTestimonials() {
 
 export async function fetchFeatures() {
   try {
-    const response = await apiClient.get('/public/features');
+    const response = await apiClient.get('/api/public/features');
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch features');
@@ -216,7 +216,7 @@ export async function fetchFeatures() {
 
 export async function fetchAboutPageData() {
     try {
-        const response = await apiClient.get('/public/about');
+        const response = await apiClient.get('/api/public/about');
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to fetch About Us data');
@@ -225,7 +225,7 @@ export async function fetchAboutPageData() {
 
 export async function sendContactForm(data: { fullName: string; email: string; message: string; }) {
   try {
-    const response = await apiClient.post('/public/contact', data);
+    const response = await apiClient.post('/api/public/contact', data);
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to send message');
@@ -237,7 +237,7 @@ export async function sendContactForm(data: { fullName: string; email: string; m
 
 export async function forgotPassword(email: string) {
     try {
-        const response = await apiClient.post('/auth/forgot-password', { email });
+        const response = await apiClient.post('/api/auth/forgot-password', { email });
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to send reset link.');
@@ -246,7 +246,7 @@ export async function forgotPassword(email: string) {
 
 export async function resetPassword(token: string, password: string) {
     try {
-        const response = await apiClient.post(`/auth/reset-password/${token}`, { password });
+        const response = await apiClient.post(`/api/auth/reset-password/${token}`, { password });
         return response.data;
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Failed to reset password.');
