@@ -102,12 +102,11 @@ export function Home() {
             <div className="md:w-1/2 mb-8 md:mb-0">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
                 <span className="text-orange-600">Hindu</span>
-                <span className="text-green-600"> Seva </span>
-                <span className="text-blue-600">Kendra</span>
+                <span className="text-orange-600"> Seva </span>
+                <span className="text-orange-600">Kendra</span>
               </h1>
-              <p className="text-xl text-gray-600 mb-8">
-                Connecting our community with trusted service providers for all
-                your needs.
+              <p className="text-xl text-gray-600 mb-8 text-orange- 400">
+                "सेवा ही हमारा संकल्प है"
               </p>
               <div className="flex flex-wrap gap-4">
                 {user ? <Link to={user.role === 'user' ? '/dashboard/user' : user.role === 'vendor' ? '/dashboard/vendor' : '/dashboard/admin'} className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
