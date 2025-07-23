@@ -171,7 +171,7 @@ export function Home() {
         </div>
       </section>
       {/* Testimonials Section */}
-      <section className="py-16 bg-white">
+{/*       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">
             What Our Community Says
@@ -196,7 +196,7 @@ export function Home() {
                 </div>)}
             </div>}
         </div>
-      </section>
+      </section> */}
       {/* CTA Section */}
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto px-4 text-center">
