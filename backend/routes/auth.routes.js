@@ -84,6 +84,84 @@ router.post('/login', async (req, res) => {
 });
 
 
-// ... (keep your password reset routes) ...
+// --- POST /api/auth/forgot-password ---
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // For security, don't reveal that the email doesn't exist
+      return res.json({ message: 'If an account with that email exists, a password reset link has been sent' });
+    }
+
+    // Generate reset token (using JWT for simplicity)
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET + user.password, // Add user's current password to the secret to invalidate when password changes
+      { expiresIn: '1h' }
+    );
+
+    // In a real app, you would send an email with this token
+    // For now, we'll just return it in the response
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&id=${user._id}`;
+    
+    console.log('Password reset URL:', resetUrl); // For development only
+
+    // In production, you would send an email here
+    // await sendPasswordResetEmail(user.email, resetUrl);
+
+    res.json({ 
+      message: 'If an account with that email exists, a password reset link has been sent',
+      resetToken // Only for development - remove in production
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
+  }
+});
+
+// --- POST /api/auth/reset-password ---
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { token, userId, newPassword } = req.body;
+    
+    if (!token || !userId || !newPassword) {
+      return res.status(400).json({ message: 'Token, user ID, and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    try {
+      // Verify the token using the user's current password in the secret
+      const decoded = jwt.verify(token, process.env.JWT_SECRET + user.password);
+      
+      // Update the password
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+      
+      // Invalidate the token by changing the password (implicitly invalidates the JWT)
+      await user.save();
+      
+      res.json({ message: 'Password has been reset successfully' });
+    } catch (error) {
+      console.error('Token verification error:', error);
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
+  }
+});
 
 module.exports = router;

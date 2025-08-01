@@ -253,11 +253,16 @@ export async function forgotPassword(email: string) {
     }
 }
 
-export async function resetPassword(token: string, password: string) {
+export async function resetPassword(token: string, userId: string, newPassword: string) {
     try {
-        const response = await apiClient.post(`/api/auth/reset-password/${token}`, { password });
+        const response = await apiClient.post('/api/auth/reset-password', { 
+            token, 
+            userId, 
+            newPassword 
+        });
         return response.data;
     } catch (error: any) {
-        throw new Error(error.response?.data?.message || 'Failed to reset password.');
+        console.error('Reset password error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to reset password. The link may have expired.');
     }
 }
