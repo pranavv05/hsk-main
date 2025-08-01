@@ -113,24 +113,54 @@ const RequestDetailsModal = ({ request, onClose }: { request: Request; onClose: 
                     <div className="bg-gray-50 p-4 rounded-lg">
                         <h4 className="font-semibold text-gray-700 mb-2">User Information</h4>
                         <div className="space-y-3 text-sm">
-                            <div>
-                                <p className="font-medium text-gray-700">Name</p>
-                                <p className="text-gray-600">{request.user.name}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium text-gray-700">Email</p>
-                                <p className="text-gray-600">{request.user.email}</p>
-                            </div>
-                            <div>
-                                <p className="font-medium text-gray-700">Phone</p>
-                                <p className="text-gray-600">{request.user.phone || 'Not provided'}</p>
-                            </div>
-                            {request.user.address && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <p className="font-medium text-gray-700">Address</p>
-                                    <p className="text-gray-600 whitespace-pre-line">{request.user.address}</p>
+                                    <p className="font-medium text-gray-700">Name</p>
+                                    <p className="text-gray-600">{request.user?.name || 'N/A'}</p>
                                 </div>
-                            )}
+                                <div>
+                                    <p className="font-medium text-gray-700">Email</p>
+                                    <p className="text-gray-600 break-all">
+                                        {request.user?.email ? (
+                                            <a href={`mailto:${request.user.email}`} className="text-blue-600 hover:underline">
+                                                {request.user.email}
+                                            </a>
+                                        ) : 'N/A'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-700">Phone</p>
+                                    <p className="text-gray-600">
+                                        {request.user?.phone ? (
+                                            <a href={`tel:${request.user.phone}`} className="text-blue-600 hover:underline">
+                                                {request.user.phone}
+                                            </a>
+                                        ) : 'Not provided'}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-700">User ID</p>
+                                    <p className="text-gray-600 text-xs font-mono break-all">{request.user?._id || 'N/A'}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="pt-2">
+                                <p className="font-medium text-gray-700 mb-1">Address</p>
+                                <div className="bg-white p-3 rounded border border-gray-200">
+                                    {request.user?.address ? (
+                                        <address className="not-italic text-gray-600 whitespace-pre-line">
+                                            {request.user.address}
+                                        </address>
+                                    ) : (
+                                        <p className="text-gray-500 italic">No address provided</p>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div className="pt-2">
+                                <p className="font-medium text-gray-700 mb-1">Request ID</p>
+                                <p className="text-xs font-mono text-gray-500 break-all">{request._id}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -198,54 +228,98 @@ export function ServiceRequestsTable() {
   if (error) return <p className="text-red-500">Could not load requests: {error}</p>;
 
   return (
-    <>
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request Title</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Vendor</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {requests.map(request => (
-              <tr key={request._id}>
-                <td className="px-6 py-4">
+            {requests.map((request) => (
+              <tr key={request._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-medium text-gray-900">{request.title}</div>
-                  <div className="text-sm text-gray-500">{request.serviceType}</div>
+                  <div className="text-xs text-gray-500">{request.serviceType}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{request.user?.name || 'N/A'}</div>
+                  <div className="text-xs text-gray-500">{request.user?.email || 'No email'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {request.user?.phone ? (
+                    <a 
+                      href={`tel:${request.user.phone}`} 
+                      className="text-sm text-blue-600 hover:underline"
+                    >
+                      {request.user.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-gray-500">Not provided</span>
+                  )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{request.user.name}</div>
-                  <div className="text-xs text-gray-500">{request.user.email}</div>
+                  <div className="text-sm text-gray-900 max-w-xs truncate" title={request.user?.address}>
+                    {request.user?.address || 'N/A'}
+                  </div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{request.user.phone}</div>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="text-sm text-gray-900">
+                    {request.vendor?.name || 'Not Assigned'}
+                  </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={request.user.address}>
-                  {request.user.address || 'N/A'}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {request.vendor?.name || 'Not Assigned'}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>{request.status}</span>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span 
+                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}
+                  >
+                    {request.status}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                  <button onClick={() => setDetailsModalRequest(request)} className="text-indigo-600 hover:text-indigo-900">View</button>
-                  {request.status === 'PENDING' && ( <button onClick={() => setAssignModalRequest(request)} className="text-blue-600 hover:text-blue-900">Assign</button> )}
+                  <button 
+                    onClick={() => setDetailsModalRequest(request)} 
+                    className="text-indigo-600 hover:text-indigo-900"
+                  >
+                    View
+                  </button>
+                  {request.status === 'PENDING' && (
+                    <button 
+                      onClick={() => setAssignModalRequest(request)} 
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Assign
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {assignModalRequest && ( <AssignVendorModal request={assignModalRequest} vendors={vendors} onClose={() => setAssignModalRequest(null)} onAssign={handleAssignVendor} /> )}
-      {detailsModalRequest && ( <RequestDetailsModal request={detailsModalRequest} onClose={() => setDetailsModalRequest(null)} /> )}
-    </>
+      
+      {/* Modals */}
+      {assignModalRequest && (
+        <AssignVendorModal 
+          request={assignModalRequest} 
+          vendors={vendors} 
+          onClose={() => setAssignModalRequest(null)} 
+          onAssign={handleAssignVendor} 
+        />
+      )}
+      
+      {detailsModalRequest && (
+        <RequestDetailsModal 
+          request={detailsModalRequest} 
+          onClose={() => setDetailsModalRequest(null)} 
+        />
+      )}
+    </div>
   );
 }
