@@ -1,6 +1,6 @@
 // src/components/dashboard/ServiceRequestsTable.tsx
-import React, { useState, useEffect } from 'react';
-import { fetchAllServiceRequests, fetchAdminVendors, assignVendorToRequest } from '../../utils/apiService';
+import { useState, useEffect } from 'react';
+import { fetchAdminServiceRequests, fetchAdminVendors, assignVendorToRequest } from '../../utils/apiService';
 
 // Interfaces for our data types
 interface Request { 
@@ -9,9 +9,19 @@ interface Request {
   description: string; 
   status: string; 
   serviceType: string; 
-  user: { name: string }; 
-  vendor?: { name: string }; 
+  user: { 
+    _id: string;
+    name: string; 
+    email: string;
+    phone: string;
+    address?: string;
+  }; 
+  vendor?: { 
+    _id: string;
+    name: string; 
+  }; 
   createdAt: string; 
+  updatedAt: string;
 }
 interface Vendor { 
   _id: string; 
@@ -51,23 +61,93 @@ const AssignVendorModal = ({ request, vendors, onClose, onAssign }: { request: R
     );
 };
 
+// Helper function for status badge styling
+const getStatusBadgeClass = (status: string) => {
+  switch (status) {
+    case 'PENDING': return 'bg-yellow-100 text-yellow-800';
+    case 'ASSIGNED': return 'bg-blue-100 text-blue-800';
+    case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
+    case 'COMPLETED': return 'bg-green-100 text-green-800';
+    case 'CANCELLED': return 'bg-red-100 text-red-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 // --- Details Modal Component ---
 const RequestDetailsModal = ({ request, onClose }: { request: Request; onClose: () => void; }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-            <h3 className="text-xl font-bold mb-4">{request.title}</h3>
-            <div className="space-y-3 text-sm">
-                <p><strong>User:</strong> {request.user.name}</p>
-                <p><strong>Service Type:</strong> {request.serviceType}</p>
-                <p><strong>Status:</strong> {request.status}</p>
-                <p><strong>Requested on:</strong> {new Date(request.createdAt).toLocaleString()}</p>
-                <div className="border-t pt-3 mt-3">
-                    <h4 className="font-semibold">Description:</h4>
-                    <p className="text-gray-600 whitespace-pre-wrap">{request.description}</p>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-2xl font-bold mb-4 text-gray-800">{request.title}</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-gray-700 mb-2">Request Details</h4>
+                        <div className="space-y-2 text-sm">
+                            <p><strong>Service Type:</strong> <span className="text-gray-600">{request.serviceType}</span></p>
+                            <p><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-xs ${getStatusBadgeClass(request.status)}`}>
+                                {request.status.replace('_', ' ')}
+                            </span></p>
+                            <p><strong>Requested on:</strong> <span className="text-gray-600">
+                                {new Date(request.createdAt).toLocaleString()}
+                            </span></p>
+                            {request.updatedAt !== request.createdAt && (
+                                <p><strong>Last updated:</strong> <span className="text-gray-600">
+                                    {new Date(request.updatedAt).toLocaleString()}
+                                </span></p>
+                            )}
+                        </div>
+                    </div>
+
+                    {request.vendor && (
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-blue-700 mb-2">Assigned Vendor</h4>
+                            <div className="text-sm">
+                                <p className="font-medium">{request.vendor.name}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-gray-700 mb-2">User Information</h4>
+                        <div className="space-y-3 text-sm">
+                            <div>
+                                <p className="font-medium text-gray-700">Name</p>
+                                <p className="text-gray-600">{request.user.name}</p>
+                            </div>
+                            <div>
+                                <p className="font-medium text-gray-700">Email</p>
+                                <p className="text-gray-600">{request.user.email}</p>
+                            </div>
+                            <div>
+                                <p className="font-medium text-gray-700">Phone</p>
+                                <p className="text-gray-600">{request.user.phone || 'Not provided'}</p>
+                            </div>
+                            {request.user.address && (
+                                <div>
+                                    <p className="font-medium text-gray-700">Address</p>
+                                    <p className="text-gray-600 whitespace-pre-line">{request.user.address}</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className="flex justify-end mt-6">
-                <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Close</button>
+
+            <div className="mt-6 bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-700 mb-2">Service Description</h4>
+                <p className="text-gray-700 whitespace-pre-wrap">{request.description}</p>
+            </div>
+
+            <div className="flex justify-end mt-6 space-x-3">
+                <button 
+                    onClick={onClose} 
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                    Close
+                </button>
             </div>
         </div>
     </div>
@@ -85,11 +165,19 @@ export function ServiceRequestsTable() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [requestsData, vendorsData] = await Promise.all([ fetchAllServiceRequests(), fetchAdminVendors() ]);
+        setLoading(true);
+        const [requestsData, vendorsData] = await Promise.all([
+          fetchAdminServiceRequests(),
+          fetchAdminVendors()
+        ]);
         setRequests(requestsData);
         setVendors(vendorsData);
-      } catch (err: any) { setError(err.message); } 
-      finally { setLoading(false); }
+      } catch (err: any) { 
+        console.error('Error loading data:', err);
+        setError(err.message);
+      } finally { 
+        setLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -98,22 +186,13 @@ export function ServiceRequestsTable() {
     if (!assignModalRequest) return;
     try {
         await assignVendorToRequest(assignModalRequest._id, vendorId);
-        const updatedRequests = await fetchAllServiceRequests();
+        const updatedRequests = await fetchAdminServiceRequests();
         setRequests(updatedRequests);
         setAssignModalRequest(null);
     } catch (err) { console.error("Failed to assign vendor", err); }
   };
   
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800';
-      case 'ASSIGNED': return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS': return 'bg-purple-100 text-purple-800';
-      case 'COMPLETED': return 'bg-green-100 text-green-800';
-      case 'CANCELLED': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // getStatusBadgeClass is now defined at the module level
 
   if (loading) return <p>Loading requests...</p>;
   if (error) return <p className="text-red-500">Could not load requests: {error}</p>;
@@ -124,11 +203,13 @@ export function ServiceRequestsTable() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Vendor</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Address</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Vendor</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -138,8 +219,19 @@ export function ServiceRequestsTable() {
                   <div className="text-sm font-medium text-gray-900">{request.title}</div>
                   <div className="text-sm text-gray-500">{request.serviceType}</div>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{request.user.name}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">{request.vendor?.name || 'Not Assigned'}</td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-gray-900">{request.user.name}</div>
+                  <div className="text-xs text-gray-500">{request.user.email}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900">{request.user.phone}</div>
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={request.user.address}>
+                  {request.user.address || 'N/A'}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">
+                  {request.vendor?.name || 'Not Assigned'}
+                </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>{request.status}</span>
                 </td>

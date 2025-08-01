@@ -6,10 +6,11 @@ const userSchema = new mongoose.Schema({
   // --- All fields go inside this one object ---
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
+  phone: { type: String, required: true },
   password: { type: String, required: true },
   role: { type: String, required: true, enum: ['user', 'vendor', 'admin'], default: 'user' },
   profileImage: { type: String },
-  address: {type: String},
+  address: { type: String },
   
   // Fields for password reset functionality
   passwordResetToken: { type: String },

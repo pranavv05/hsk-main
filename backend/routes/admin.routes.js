@@ -5,6 +5,7 @@ const User = require('../models/user.model');
 const Vendor = require('../models/vendor.model');
 const ServiceRequest = require('../models/serviceRequest.model');
 const auth = require('../middleware/auth.middleware');
+const { sendVendorAssignmentNotification } = require('../services/notification.service');
 
 const isAdmin = (req, res, next) => {
     if (req.user && req.user.role === 'admin') {
@@ -46,6 +47,24 @@ router.get('/vendors', auth, isAdmin, async (req, res) => {
     }
 });
 
+router.get('/service-requests', auth, isAdmin, async (req, res) => {
+    console.log('--- ENTERED /api/admin/service-requests ---');
+    try {
+        const requests = await ServiceRequest.find()
+            .populate('user', 'name email address phone')
+            .populate('vendor', 'name')
+            .sort({ createdAt: -1 })
+            .lean();
+            
+        console.log(`Found ${requests.length} service requests.`);
+        console.log('--- SUCCESS /api/admin/service-requests ---');
+        return res.json(requests);
+    } catch (err) {
+        console.error('--- ERROR in /api/admin/service-requests ---:', err.message);
+        return res.status(500).send('Server Error');
+    }
+});
+
 router.patch('/vendors/:id/verify', auth, isAdmin, async (req, res) => {
     console.log(`--- ENTERED /api/admin/vendors/${req.params.id}/verify ---`);
     try {
@@ -64,16 +83,50 @@ router.patch('/requests/:id/assign', auth, isAdmin, async (req, res) => {
     console.log(`--- ENTERED /api/admin/requests/${req.params.id}/assign ---`);
     try {
         const { vendorId } = req.body;
-        const vendorProfile = await Vendor.findById(vendorId);
-        if (!vendorProfile) { return res.status(404).json({ message: 'Vendor profile not found.' }); }
         
-        const userIdForVendor = vendorProfile.user;
+        // Find the vendor and populate user data
+        const vendorProfile = await Vendor.findById(vendorId).populate('user');
+        if (!vendorProfile) { 
+            return res.status(404).json({ message: 'Vendor profile not found.' }); 
+        }
+        
+        // Update the service request with the vendor's user ID
         const updatedRequest = await ServiceRequest.findByIdAndUpdate(
             req.params.id,
-            { vendor: userIdForVendor, status: 'ASSIGNED' },
+            { vendor: vendorProfile.user._id, status: 'ASSIGNED' },
             { new: true }
-        );
-        if (!updatedRequest) { return res.status(404).json({ message: 'Service request not found.' }); }
+        )
+        .populate('user', 'name email phone address')
+        .populate('vendor', 'name');
+        
+        if (!updatedRequest) { 
+            return res.status(404).json({ message: 'Service request not found.' }); 
+        }
+        
+        // Send notification to vendor (you'll need to implement this function)
+        try {
+            await sendVendorAssignmentNotification({
+                vendorEmail: vendorProfile.user.email,
+                vendorName: vendorProfile.fullName || vendorProfile.user.name,
+                request: {
+                    id: updatedRequest._id,
+                    title: updatedRequest.title,
+                    serviceType: updatedRequest.serviceType,
+                    description: updatedRequest.description,
+                    user: {
+                        name: updatedRequest.user.name,
+                        email: updatedRequest.user.email,
+                        phone: updatedRequest.user.phone,
+                        address: updatedRequest.user.address
+                    },
+                    createdAt: updatedRequest.createdAt
+                }
+            });
+        } catch (notifError) {
+            console.error('Error sending vendor notification:', notifError);
+            // Don't fail the request if notification fails
+        }
+        
         console.log('--- SUCCESS /api/admin/requests/assign ---');
         return res.json(updatedRequest);
     } catch (err) {

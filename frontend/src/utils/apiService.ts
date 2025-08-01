@@ -184,6 +184,15 @@ export async function fetchAllServiceRequests() {
   }
 }
 
+export async function fetchAdminServiceRequests() {
+  try {
+    const response = await apiClient.get('/api/admin/service-requests');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch admin service requests');
+  }
+}
+
 
 // --- PUBLIC DATA FUNCTIONS ---
 

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AdminDashboard } from './pages/AdminDashboard';
-import { Contact } from './pages/Contact';
-import { Home } from './pages/Home';
-import { About } from './pages/About';
+import Contact  from './pages/Contact';
+import Home from './pages/Home';
+import  About  from './pages/About';
 import { Layout } from './components/Layout';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
