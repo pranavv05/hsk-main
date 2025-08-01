@@ -57,6 +57,18 @@ router.get('/service-requests', auth, isAdmin, async (req, res) => {
             .lean();
             
         console.log(`Found ${requests.length} service requests.`);
+        
+        // Debug log to check the first request's user data
+        if (requests.length > 0) {
+            console.log('Sample request user data:', {
+                userId: requests[0].user?._id,
+                userName: requests[0].user?.name,
+                userEmail: requests[0].user?.email,
+                userPhone: requests[0].user?.phone,
+                userAddress: requests[0].user?.address
+            });
+        }
+        
         console.log('--- SUCCESS /api/admin/service-requests ---');
         return res.json(requests);
     } catch (err) {

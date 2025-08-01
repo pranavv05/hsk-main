@@ -200,6 +200,7 @@ export function ServiceRequestsTable() {
           fetchAdminServiceRequests(),
           fetchAdminVendors()
         ]);
+        console.log('Admin Service Requests Data:', requestsData); // Debug log
         setRequests(requestsData);
         setVendors(vendorsData);
       } catch (err: any) { 
@@ -255,18 +256,26 @@ export function ServiceRequestsTable() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {request.user?.phone ? (
-                    <a 
-                      href={`tel:${request.user.phone}`} 
-                      className="text-sm text-blue-600 hover:underline"
-                    >
-                      {request.user.phone}
-                    </a>
+                    <div>
+                      <a 
+                        href={`tel:${request.user.phone}`} 
+                        className="text-sm text-blue-600 hover:underline block"
+                      >
+                        {request.user.phone}
+                      </a>
+                      <a 
+                        href={`mailto:${request.user.email}`}
+                        className="text-xs text-gray-500 hover:text-blue-600 mt-1 block"
+                      >
+                        {request.user.email}
+                      </a>
+                    </div>
                   ) : (
                     <span className="text-sm text-gray-500">Not provided</span>
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 max-w-xs truncate" title={request.user?.address}>
+                  <div className="text-sm text-gray-900 max-w-xs" title={request.user?.address}>
                     {request.user?.address || 'N/A'}
                   </div>
                 </td>
