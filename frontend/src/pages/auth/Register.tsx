@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
+
 export function Register() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
     role: 'user' as 'user' | 'vendor',
@@ -14,37 +16,30 @@ export function Register() {
   const [errors, setErrors] = useState<{
     name?: string;
     email?: string;
+    phone?: string;
     password?: string;
     confirmPassword?: string;
     address?: string;
     general?: string;
   }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    register
-  } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Clear error when field is edited
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: undefined
-      }));
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
+
   const validate = () => {
     const newErrors: {
       name?: string;
       email?: string;
+      phone?: string;
       password?: string;
       confirmPassword?: string;
     } = {};
@@ -55,6 +50,11 @@ export function Register() {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
+    }
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^[0-9]{10}$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -67,6 +67,7 @@ export function Register() {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -83,13 +84,15 @@ export function Register() {
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({
-        general: 'Registration failed. Please try again.'
+        general: 'Registration failed. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  return <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+  return (
+    <div className="bg-gray-50 min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">
@@ -107,17 +110,51 @@ export function Register() {
             </Link>
           </p>
         </div>
-        {errors.general && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
+        {errors.general && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md flex items-start">
             <AlertCircle className="h-5 w-5 mr-2 mt-0.5" />
             <span>{errors.general}</span>
-          </div>}
+          </div>
+        )}
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
               Full Name
             </label>
-            <input id="name" name="name" type="text" autoComplete="name" value={formData.name} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border ${errors.name ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`} />
-            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+            <input
+              id="name"
+              name="name"
+              type="text"
+              autoComplete="name"
+              value={formData.name}
+              onChange={handleChange}
+              className={`mt-1 block w-full px-3 py-2 border ${
+                errors.name ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+            />
+            {errors.name && (
+              <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+            )}
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+              Phone Number
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="1234567890"
+              value={formData.phone}
+              onChange={handleChange}
+              className={`mt-1 block w-full px-3 py-2 border ${
+                errors.phone ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+            />
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+            )}
           </div>
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">
@@ -130,15 +167,32 @@ export function Register() {
               autoComplete="street-address"
               value={formData.address}
               onChange={handleChange}
-              className={`mt-1 block w-full px-3 py-2 border ${errors.address ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+              className={`mt-1 block w-full px-3 py-2 border ${
+                errors.address ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
             />
-            {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address}</p>}
+            {errors.address && (
+              <p className="mt-1 text-sm text-red-600">{errors.address}</p>
+            )}
           </div>
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email address
             </label>
-            <input id="email" name="email" type="email" autoComplete="email" value={formData.email} onChange={handleChange} className={`mt-1 block w-full px-3 py-2 border ${errors.email ? 'border-red-300' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`} />
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={`mt-1 block w-full px-3 py-2 border ${
+                errors.email ? 'border-red-300' : 'border-gray-300'
+              } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+            )}
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
           </div>
           <div>

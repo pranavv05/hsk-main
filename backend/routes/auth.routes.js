@@ -10,14 +10,32 @@ const router = express.Router();
 // --- POST /api/auth/register ---
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role, address } = req.body; // Added address for the new feature
+    const { name, email, phone, password, role, address } = req.body;
 
+    // Validate required fields
+    if (!name || !email || !phone || !password || !role) {
+      return res.status(400).json({ message: 'Please provide all required fields' });
+    }
+
+    // Validate phone number format (10 digits)
+    if (!/^\d{10}$/.test(phone)) {
+      return res.status(400).json({ message: 'Please enter a valid 10-digit phone number' });
+    }
+
+    // Check if email already exists
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
-    user = new User({ name, email, password, role, address }); // Added address
+    // Check if phone number already exists
+    const existingPhoneUser = await User.findOne({ phone });
+    if (existingPhoneUser) {
+      return res.status(400).json({ message: 'Phone number already registered' });
+    }
+
+    // Create new user with phone number
+    user = new User({ name, email, phone, password, role, address });
     await user.save();
     console.log(`✅ User saved successfully: ${user.email}`);
 
