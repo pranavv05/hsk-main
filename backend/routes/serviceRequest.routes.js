@@ -60,12 +60,14 @@ router.get('/vendor', auth, async (req, res) => {
                 { status: 'PENDING', serviceType: vendorProfile.serviceType },
                 { vendor: req.user.id }
             ]
-        }).populate('user', 'name email').sort({ createdAt: -1 });
+        }).populate('user', 'name email phone address').sort({ createdAt: -1 });
 
         const formattedRequests = requests.map(req => ({
             ...req.toObject(),
             userName: req.user ? req.user.name : 'N/A',
             userContact: req.user ? req.user.email : 'N/A',
+            userPhone: req.user?.phone || 'Not provided',
+            userAddress: req.user?.address || 'Not provided'
         }));
         res.json(formattedRequests);
     } catch (err) {

@@ -14,12 +14,15 @@ import { AlertCircle, Edit, Check, Loader2, CheckCircle, XCircle } from 'lucide-
 // --- Interfaces for our data types ---
 interface Service { _id: string; name: string; }
 interface ServiceRequest {
-  _id: string; 
-  title: string; 
-  description: string; 
-  userName: string; 
+  _id: string;
+  title: string;
+  description: string;
+  serviceType: string;
+  userName: string;
   userContact: string;
-  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED'; 
+  userPhone?: string;
+  userAddress?: string;
+  status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED';
   createdAt: string;
 }
 interface VendorProfile {
@@ -262,36 +265,59 @@ export function VendorDashboard() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Request</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact & Address</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {serviceRequests.map(request => (
-                    <tr key={request._id}>
+                    <tr key={request._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{request.title}</div>
-                        <div className="text-sm text-gray-500">{new Date(request.createdAt).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-500">{request.serviceType} • {new Date(request.createdAt).toLocaleDateString()}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{request.userName}</div>
                         <div className="text-sm text-gray-500">{request.userContact}</div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>{request.status}</span>
+                        {request.userPhone && (
+                          <div className="text-sm">
+                            <a href={`tel:${request.userPhone}`} className="text-blue-600 hover:underline">
+                              {request.userPhone}
+                            </a>
+                          </div>
+                        )}
+                        {request.userAddress && (
+                          <div className="text-sm text-gray-500 mt-1 max-w-xs truncate" title={request.userAddress}>
+                            {request.userAddress}
+                          </div>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
+                          {request.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         {request.status === 'ASSIGNED' && (
-                          <button onClick={() => handleAccept(request._id)} className="text-blue-600 hover:text-blue-900 flex items-center">
+                          <button 
+                            onClick={() => handleAccept(request._id)} 
+                            className="text-blue-600 hover:text-blue-900 flex items-center"
+                          >
                             <Check className="h-4 w-4 mr-1" /> Accept
                           </button>
                         )}
                         {request.status === 'IN_PROGRESS' && (
-                          <button onClick={() => handleComplete(request._id)} className="text-green-600 hover:text-green-900 flex items-center">
+                          <button 
+                            onClick={() => handleComplete(request._id)} 
+                            className="text-green-600 hover:text-green-900 flex items-center"
+                          >
                             <Check className="h-4 w-4 mr-1" /> Complete
                           </button>
                         )}
-                        {request.status === 'COMPLETED' && <span className="text-gray-500">Finished</span>}
+                        {request.status === 'COMPLETED' && <span className="text-gray-500">Completed</span>}
                         {request.status === 'PENDING' && <span className="text-gray-500">Awaiting Assignment</span>}
                       </td>
                     </tr>
