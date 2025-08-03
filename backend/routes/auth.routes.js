@@ -105,9 +105,16 @@ router.post('/forgot-password', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // Get the frontend URL from environment variables or fallback to localhost
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
+    // Get the frontend URL from environment variables (required in production)
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      console.error('FRONTEND_URL environment variable is not set');
+      return res.status(500).json({ message: 'Server configuration error' });
+    }
+    
+    // Ensure the URL doesn't have a trailing slash
+    const baseUrl = frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl;
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
     
     // In production, you should implement email sending here
     if (process.env.NODE_ENV === 'production') {
