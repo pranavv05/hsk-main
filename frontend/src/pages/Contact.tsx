@@ -87,7 +87,7 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold text-lg">Our Location</h3>
                       <p className="text-blue-100">
-                        123 Main Street, City, State, 400001, India
+                        5-VRaj Darshan Society, Samarwani,Silvassa, Dadra & Nagar Haveli-396230
                       </p>
                     </div>
                   </div>
@@ -99,7 +99,7 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold text-lg">Phone</h3>
                       <p className="text-blue-100">+91 6359220055</p>
-                      <p className="text-blue-100 text-sm mt-1">Mon-Sun: 9:00 AM - 8:00 PM</p>
+                      <p className="text-blue-100 text-sm mt-1">Mon-Fri: 9:00 AM - 6:00 PM</p>
                     </div>
                   </div>
                   
@@ -279,6 +279,39 @@ const Contact = () => {
                     <MapPin className="w-16 h-16 text-blue-600 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-gray-800 mb-2">Our Office Location</h3>
                     <p className="text-gray-600 mb-4">123 Main Street, City, State, 400001, India</p>
+                    <p className="text-sm text-gray-500">* Map integration would be implemented here in production</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6 mt-10">
+              {[
+                {
+                  icon: <Phone className="w-8 h-8 text-blue-600" />,
+                  title: 'Call Us',
+                  description: '+91 98765 43210',
+                  action: 'Call Now',
+                  link: 'tel:+919876543210'
+                },
+                {
+                  icon: <Mail className="w-8 h-8 text-blue-600" />,
+                  title: 'Email Us',
+                  description: 'info@hindusevakendra.com',
+                  action: 'Send Email',
+                  link: 'mailto:info@hindusevakendra.com'
+                },
+                {
+                  icon: <Clock className="w-8 h-8 text-blue-600" />,
+                  title: 'Working Hours',
+                  description: 'Mon - Fri: 9:00 AM - 6:00 PM',
+                  subDescription: 'Sat: 10:00 AM - 4:00 PM',
+                  action: 'View All Hours'
+                }
+              ].map((item, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   viewport={{ once: true }}
