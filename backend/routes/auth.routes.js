@@ -91,63 +91,76 @@ const { sendPasswordResetEmail } = require('../utils/emailService');
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    
     if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Email is required' 
+      });
     }
-
-    const user = await User.findOne({ email });
+    
+    console.log('Password reset requested for email:', email);
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Always return success to prevent email enumeration
     if (!user) {
-      // For security, don't reveal that the email doesn't exist
-      return res.json({ message: 'If an account with that email exists, a password reset link has been sent' });
+      console.log('No user found with email:', email);
+      return res.json({ 
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent' 
+      });
     }
-
-    // Generate reset token (using JWT for simplicity)
+    
+    // Generate a reset token that expires in 1 hour
     const resetToken = jwt.sign(
       { id: user._id },
-      process.env.JWT_SECRET + user.password, // Add user's current password to the secret to invalidate when password changes
+      process.env.JWT_SECRET + user.password, // Include user's current password in the secret
       { expiresIn: '1h' }
     );
-
-    // Get the frontend URL from environment variables (required in production)
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      console.error('FRONTEND_URL environment variable is not set');
-      return res.status(500).json({ message: 'Server configuration error' });
-    }
     
-    // Ensure the URL doesn't have a trailing slash
-    const baseUrl = frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl;
-    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
+    // Create reset URL with token and user ID
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}&userId=${user._id}`;
+    
+    console.log('Generated reset URL for user:', user.email);
     
     try {
-      console.log('Attempting to send password reset email to:', user.email);
-      console.log('Reset URL:', resetUrl);
-      
-      // Send the password reset email
+      // Send email with reset link
       const emailResult = await sendPasswordResetEmail(user.email, resetUrl);
-      console.log('Email send result:', emailResult);
+      console.log('Password reset email sent successfully to:', user.email);
       
-      // Always log the reset URL for debugging
-      console.log('Password reset URL:', resetUrl);
+      // Store the reset token and expiry in the user document
+      user.passwordResetToken = resetToken;
+      user.passwordResetExpires = Date.now() + 3600000; // 1 hour from now
+      await user.save({ validateBeforeSave: false });
+      
+      // Always return the same message whether the email exists or not
+      // to avoid revealing whether an email exists in the system
+      return res.json({ 
+        success: true,
+        message: 'If an account with that email exists, a password reset link has been sent',
+        // Only include resetToken in development for testing
+        ...(process.env.NODE_ENV !== 'production' && { resetToken })
+      });
+      
     } catch (emailError) {
-      console.error('Failed to send password reset email:', emailError);
+      console.error('Error sending password reset email:', {
+        error: emailError.message,
+        email: user.email,
+        stack: emailError.stack
+      });
+      
       // In production, don't reveal the error details to the client
       const errorMessage = process.env.NODE_ENV === 'production'
         ? 'Error sending password reset email. Please try again later.'
         : `Error sending email: ${emailError.message}`;
-        
+      
       return res.status(500).json({ 
+        success: false,
         message: errorMessage
       });
     }
-
-    // Always return the same message whether the email exists or not
-    // to avoid revealing whether an email exists in the system
-    res.json({ 
-      message: 'If an account with that email exists, a password reset link has been sent',
-      // Only include resetToken in development for testing
-      ...(process.env.NODE_ENV !== 'production' && { resetToken })
-    });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ message: 'Server error during password reset' });
@@ -159,75 +172,78 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, userId, newPassword } = req.body;
     
-    console.log('Reset password request received:', { userId, token: token ? 'token-present' : 'missing-token' });
-    
     if (!token || !userId || !newPassword) {
-      console.log('Missing required fields for password reset');
       return res.status(400).json({ message: 'Token, user ID, and new password are required' });
     }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
-    }
-
-    // Find user by ID
-    const user = await User.findById(userId);
-    if (!user) {
-      console.log('User not found with ID:', userId);
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
-    }
-
+    
+    console.log('Reset password request received for user ID:', userId);
+    
     try {
-      console.log('Verifying token for user:', user.email);
-      
-      // Verify the token using the same secret used to sign it
-      const secret = process.env.JWT_SECRET + user.password;
-      const decoded = jwt.verify(token, secret);
-      
-      console.log('Token verified successfully. Updating password...');
-      
-      // Update the password and ensure required fields are set
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(newPassword, salt);
-      
-      // Ensure required fields are present before saving
-      if (!user.phone) {
-        // If phone is required but missing, set a default value
-        // You might want to handle this differently based on your requirements
-        user.phone = '0000000000'; // Default phone number
-        console.log('Warning: Set default phone number for user during password reset');
+      // Find the user by ID
+      const user = await User.findById(userId);
+      if (!user) {
+        console.log('User not found with ID:', userId);
+        return res.status(400).json({ message: 'Invalid or expired reset token' });
       }
       
-      // Save the user with the new password
+      console.log('Found user for password reset:', user.email);
+      
       try {
-        await user.save({ validateBeforeSave: false }); // Skip validation for required fields
+        // Verify the token using JWT_SECRET + user's current password
+        // This ensures the token is only valid for the current password
+        const decoded = jwt.verify(token, process.env.JWT_SECRET + user.password);
+        console.log('Token verified successfully for user:', user.email);
+        
+        if (decoded.id !== userId) {
+          console.log('Token user ID does not match request user ID');
+          return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+        
+        // Update the password - this will trigger the pre-save hook to hash it
+        user.password = newPassword;
+        
+        // Clear any existing reset token
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        
+        // Save the user (this will hash the password via the pre-save hook)
+        await user.save({ validateBeforeSave: false });
+        
         console.log('Password updated successfully for user:', user.email);
-      } catch (saveError) {
-        console.error('Error saving user after password reset:', saveError);
-        throw new Error('Failed to update password');
+        
+        return res.json({ 
+          success: true,
+          message: 'Password has been reset successfully' 
+        });
+        
+      } catch (tokenError) {
+        console.error('Token verification failed:', {
+          error: tokenError.message,
+          token: token,
+          userId: userId
+        });
+        
+        return res.status(400).json({ 
+          success: false,
+          message: 'Invalid or expired reset token',
+          // In development, include more details
+          ...(process.env.NODE_ENV !== 'production' && { 
+            error: tokenError.message,
+            hint: 'The reset link may have expired or already been used. Please request a new password reset.'
+          })
+        });
       }
-      
-      console.log('Password updated successfully for user:', user.email);
-      res.json({ message: 'Password has been reset successfully' });
       
     } catch (error) {
-      console.error('Token verification failed:', {
+      console.error('Error during password reset:', {
         error: error.message,
-        name: error.name,
-        expiredAt: error.expiredAt
+        stack: error.stack
       });
       
-      if (error.name === 'TokenExpiredError') {
-        return res.status(400).json({ message: 'Reset token has expired. Please request a new password reset.' });
-      }
-      
-      return res.status(400).json({ 
-        message: 'Invalid or expired reset token',
-        // In development, include more details
-        ...(process.env.NODE_ENV !== 'production' && { 
-          error: error.message,
-          hint: 'Make sure the token was not used already and is not expired' 
-        })
+      return res.status(500).json({ 
+        success: false,
+        message: 'Server error during password reset',
+        ...(process.env.NODE_ENV !== 'production' && { error: error.message })
       });
     }
   } catch (error) {
