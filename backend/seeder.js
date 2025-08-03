@@ -52,8 +52,8 @@ const mockServiceRequests = [
 ];
 
 const mockVendors = [
-  { id: '6', fullName: 'L P Sanitary', phone: '9876543210', serviceType: 'ELECTRICIAN', description: 'All types of sanitary and electrical work.', experience: 10, isVerified: true, servicesCompleted: 45, rating: 4.8 },
-  { id: '9', fullName: 'Deepak L Patel', phone: '8765432109', serviceType: 'PLUMBING', description: 'Licensed plumber specializing in repairs...', experience: 15, isVerified: true, servicesCompleted: 78, rating: 4.9 },
+  { id: '6', fullName: 'L P Sanitary', phone: '6359220001', serviceType: 'ELECTRICIAN', description: 'All types of sanitary and electrical work.', experience: 10, isVerified: true, servicesCompleted: 45, rating: 4.8 },
+  { id: '9', fullName: 'Deepak L Patel', phone: '6359220002', serviceType: 'PLUMBING', description: 'Licensed plumber specializing in repairs...', experience: 15, isVerified: true, servicesCompleted: 78, rating: 4.9 },
 ];
 
 const mockServices = [

@@ -62,13 +62,13 @@ export function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center py-2">
             <div className="flex items-center space-x-4 mb-2 md:mb-0">
-              <a href="tel:+919876543210" className="flex items-center hover:text-blue-100 transition-colors">
+              <a href="tel:+916359220055" className="flex items-center hover:text-blue-100 transition-colors">
                 <Phone className="w-4 h-4 mr-1" />
-                <span>+91 98765 43210</span>
+                <span>+91 63592 20055</span>
               </a>
-              <a href="mailto:info@hindusevakendra.com" className="flex items-center hover:text-blue-100 transition-colors">
+              <a href="mailto:helphskhelp@gmail.com" className="flex items-center hover:text-blue-100 transition-colors">
                 <Mail className="w-4 h-4 mr-1" />
-                <span>info@hindusevakendra.com</span>
+                <span>helphskhelp@gmail.com</span>
               </a>
             </div>
             <div className="flex items-center space-x-4">
@@ -291,13 +291,13 @@ export function Layout({ children }: LayoutProps) {
             <div>
               <h3 className="text-lg font-semibold mb-3">Contact</h3>
               <p className="text-gray-600">
-                123 Hindu Seva Road
+                HSK Office
                 <br />
                 Mumbai, Maharashtra
                 <br />
                 India 400001
                 <br />
-                info@hindusevakendra.com
+                helphskhelp@gmail.com
               </p>
             </div>
           </div>
