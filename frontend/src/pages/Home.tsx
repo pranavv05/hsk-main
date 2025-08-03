@@ -204,7 +204,7 @@ const Home = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: 0.2 }}
             >
-              <div className="w-20 h-20 rounded-2xl bg-yellow-50 text-yellow-600 flex items-center justify-center mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-yellow-50 text-yellow-600 flex items-center justify-center mx-auto mb-6">
                 <Star className="w-10 h-10" />
               </div>
               <h3 className="text-xl font-bold mb-3 text-gray-900">Lightning Fast</h3>
