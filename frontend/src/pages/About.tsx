@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ShieldCheck, Users, Target, Award, Heart, Handshake, Lightbulb } from 'lucide-react';
+import { ShieldCheck, Users, Target, Award, Handshake, Lightbulb } from 'lucide-react';
 
 const About = () => {
   // Animation variants
@@ -46,10 +46,7 @@ const About = () => {
                   alt="Our story" 
                   className="rounded-2xl shadow-2xl w-full h-auto"
                 />
-                <div className="absolute -bottom-6 -right-6 bg-blue-600 text-white p-6 rounded-2xl shadow-lg hidden md:block">
-                  <Heart className="w-10 h-10" fill="currentColor" />
-                  <p className="mt-2 font-semibold">Serving Since 2023</p>
-                </div>
+                    
               </div>
             </motion.div>
             

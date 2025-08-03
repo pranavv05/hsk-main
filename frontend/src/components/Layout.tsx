@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Menu, X, User, LogOut, ChevronDown, Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin, MessageSquare } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, Phone, Mail, Facebook, Twitter, Instagram, Linkedin, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface LayoutProps {
@@ -44,7 +44,7 @@ export function Layout({ children }: LayoutProps) {
   const navLinks = [
     { to: '/', label: 'Home' },
     { to: '/about', label: 'About Us' },
-    { to: '/services', label: 'Services' },
+
     { to: '/contact', label: 'Contact' }
   ];
 
@@ -107,7 +107,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center space-x-1">
-              {navLinks.map((link, index) => (
+              {navLinks.map((link) => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -291,11 +291,7 @@ export function Layout({ children }: LayoutProps) {
             <div>
               <h3 className="text-lg font-semibold mb-3">Contact</h3>
               <p className="text-gray-600">
-                HSK Office
-                <br />
-                Mumbai, Maharashtra
-                <br />
-                India 400001
+                5-VRaj Darshan Society, Samarwani,Silvassa, Dadra & Nagar Haveli-396230
                 <br />
                 helphskhelp@gmail.com
               </p>

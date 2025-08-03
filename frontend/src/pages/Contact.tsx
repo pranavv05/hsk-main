@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle, MessageSquare, User, Mail as MailIcon, HelpCircle } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, CheckCircle, MessageSquare, User, Mail as MailIcon, HelpCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { motion } from 'framer-motion';
 
@@ -253,95 +253,7 @@ const Contact = () => {
         </div>
       </section>
       
-      {/* Map Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <motion.div 
-            variants={fadeInUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="max-w-6xl mx-auto"
-          >
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-gray-900 mb-3">Find Us on Map</h2>
-              <div className="w-20 h-1 bg-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
-                Visit our office or get in touch with us for any inquiries. We're here to help you with all your service needs.
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
-              <div className="aspect-w-16 aspect-h-9 h-96 w-full">
-                <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <MapPin className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">Our Office Location</h3>
-                    <p className="text-gray-600 mb-4">123 Main Street, City, State, 400001, India</p>
-                    <p className="text-sm text-gray-500">* Map integration would be implemented here in production</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-6 mt-10">
-              {[
-                {
-                  icon: <Phone className="w-8 h-8 text-blue-600" />,
-                  title: 'Call Us',
-                  description: '+91 98765 43210',
-                  action: 'Call Now',
-                  link: 'tel:+919876543210'
-                },
-                {
-                  icon: <Mail className="w-8 h-8 text-blue-600" />,
-                  title: 'Email Us',
-                  description: 'info@hindusevakendra.com',
-                  action: 'Send Email',
-                  link: 'mailto:info@hindusevakendra.com'
-                },
-                {
-                  icon: <Clock className="w-8 h-8 text-blue-600" />,
-                  title: 'Working Hours',
-                  description: 'Mon - Fri: 9:00 AM - 6:00 PM',
-                  subDescription: 'Sat: 10:00 AM - 4:00 PM',
-                  action: 'View All Hours'
-                }
-              ].map((item, index) => (
-                <motion.div 
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                  className="bg-white p-6 rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow duration-300"
-                >
-                  <div className="bg-blue-50 w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                    {item.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{item.title}</h3>
-                  <p className="text-gray-700 mb-1">{item.description}</p>
-                  {item.subDescription && <p className="text-gray-700">{item.subDescription}</p>}
-                  {item.link ? (
-                    <a 
-                      href={item.link} 
-                      className="inline-block mt-4 text-blue-600 hover:text-blue-800 font-medium flex items-center"
-                    >
-                      {item.action}
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </a>
-                  ) : (
-                    <p className="mt-4 text-gray-500 text-sm">{item.action}</p>
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-      </section>
+      
       {/* FAQ Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
