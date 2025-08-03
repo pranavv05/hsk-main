@@ -84,6 +84,9 @@ router.post('/login', async (req, res) => {
 });
 
 
+// Import the email service
+const { sendPasswordResetEmail } = require('../utils/emailService');
+
 // --- POST /api/auth/forgot-password ---
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -116,25 +119,27 @@ router.post('/forgot-password', async (req, res) => {
     const baseUrl = frontendUrl.endsWith('/') ? frontendUrl.slice(0, -1) : frontendUrl;
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
     
-    // In production, you should implement email sending here
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        // Uncomment and implement email sending in production
-        // await sendPasswordResetEmail(user.email, resetUrl);
-        console.log(`Password reset email would be sent to: ${user.email}`);
-        console.log(`Reset URL: ${resetUrl}`);
-      } catch (emailError) {
-        console.error('Failed to send password reset email:', emailError);
-        return res.status(500).json({ 
-          message: 'Error sending password reset email. Please try again later.' 
-        });
+    try {
+      // Send the password reset email
+      await sendPasswordResetEmail(user.email, resetUrl);
+      
+      // In development, still log the reset URL to the console for testing
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Development - Password reset URL:', resetUrl);
       }
-    } else {
-      // In development, log the reset URL to the console
-      console.log('Development - Password reset URL:', resetUrl);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // In production, don't reveal the error details to the client
+      const errorMessage = process.env.NODE_ENV === 'production'
+        ? 'Error sending password reset email. Please try again later.'
+        : `Error sending email: ${emailError.message}`;
+        
+      return res.status(500).json({ 
+        message: errorMessage
+      });
     }
 
-    // Always return the same message whether in development or production
+    // Always return the same message whether the email exists or not
     // to avoid revealing whether an email exists in the system
     res.json({ 
       message: 'If an account with that email exists, a password reset link has been sent',
