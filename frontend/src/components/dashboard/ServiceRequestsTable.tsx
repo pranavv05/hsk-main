@@ -186,147 +186,202 @@ const RequestDetailsModal = ({ request, onClose }: { request: Request; onClose: 
 // --- Main Table Component ---
 export function ServiceRequestsTable() {
   const [requests, setRequests] = useState<Request[]>([]);
+  const [filteredRequests, setFilteredRequests] = useState<Request[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [assignModalRequest, setAssignModalRequest] = useState<Request | null>(null);
-  const [detailsModalRequest, setDetailsModalRequest] = useState<Request | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [showAssignModal, setShowAssignModal] = useState(false);
 
+  // Filter requests based on search term
   useEffect(() => {
-    const loadData = async () => {
+    if (searchTerm.trim() === '') {
+      setFilteredRequests(requests);
+    } else {
+      const term = searchTerm.toLowerCase();
+      const filtered = requests.filter(request => 
+        request.title.toLowerCase().includes(term) ||
+        request.serviceType.toLowerCase().includes(term) ||
+        request.status.toLowerCase().includes(term) ||
+        request.user.name.toLowerCase().includes(term) ||
+        request.user.email.toLowerCase().includes(term) ||
+        (request.user.phone && request.user.phone.includes(term)) ||
+        (request.vendor?.name && request.vendor.name.toLowerCase().includes(term))
+      );
+      setFilteredRequests(filtered);
+    }
+  }, [searchTerm, requests]);
+
+  // Update filtered requests when requests data changes
+  useEffect(() => {
+    setFilteredRequests(requests);
+  }, [requests]);
+
+  // Fetch data on component mount
+  useEffect(() => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const [requestsData, vendorsData] = await Promise.all([
           fetchAdminServiceRequests(),
           fetchAdminVendors()
         ]);
-        console.log('Admin Service Requests Data:', requestsData); // Debug log
         setRequests(requestsData);
         setVendors(vendorsData);
-      } catch (err: any) { 
-        console.error('Error loading data:', err);
-        setError(err.message);
-      } finally { 
+      } catch (err: any) {
+        setError(err.message || 'Failed to load data');
+      } finally {
         setLoading(false);
       }
     };
-    loadData();
+
+    fetchData();
   }, []);
 
   const handleAssignVendor = async (vendorId: string) => {
-    if (!assignModalRequest) return;
+    if (!selectedRequest) return;
     try {
-        await assignVendorToRequest(assignModalRequest._id, vendorId);
+        await assignVendorToRequest(selectedRequest._id, vendorId);
         const updatedRequests = await fetchAdminServiceRequests();
         setRequests(updatedRequests);
-        setAssignModalRequest(null);
+        setShowAssignModal(false);
     } catch (err) { console.error("Failed to assign vendor", err); }
   };
   
   // getStatusBadgeClass is now defined at the module level
 
-  if (loading) return <p>Loading requests...</p>;
-  if (error) return <p className="text-red-500">Could not load requests: {error}</p>;
-
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {requests.map((request) => (
-              <tr key={request._id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{request.title}</div>
-                  <div className="text-xs text-gray-500">{request.serviceType}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{request.user?.name || 'N/A'}</div>
-                  <div className="text-xs text-gray-500">{request.user?.email || 'No email'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {request.user?.phone ? (
-                    <div>
-                      <a 
-                        href={`tel:${request.user.phone}`} 
-                        className="text-sm text-blue-600 hover:underline block"
-                      >
-                        {request.user.phone}
-                      </a>
-                      <a 
-                        href={`mailto:${request.user.email}`}
-                        className="text-xs text-gray-500 hover:text-blue-600 mt-1 block"
-                      >
-                        {request.user.email}
-                      </a>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-500">Not provided</span>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900 max-w-xs" title={request.user?.address}>
-                    {request.user?.address || 'N/A'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="text-sm text-gray-900">
-                    {request.vendor?.name || 'Not Assigned'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span 
-                    className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}
-                  >
-                    {request.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                  <button 
-                    onClick={() => setDetailsModalRequest(request)} 
-                    className="text-indigo-600 hover:text-indigo-900"
-                  >
-                    View
-                  </button>
-                  {request.status === 'PENDING' && (
-                    <button 
-                      onClick={() => setAssignModalRequest(request)} 
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      Assign
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="p-4">
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative max-w-md">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            placeholder="Search requests by title, service, status, or customer..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <p className="mt-1 text-sm text-gray-500">
+          {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} found
+        </p>
       </div>
+
+      {loading ? (
+        <div className="p-4">Loading service requests...</div>
+      ) : error ? (
+        <div className="p-4 text-red-500">Error: {error}</div>
+      ) : filteredRequests.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <svg
+            className="mx-auto h-12 w-12 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1}
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No service requests found</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            {searchTerm
+              ? 'Try adjusting your search or filter to find what you\'re looking for.'
+              : 'There are currently no service requests in the system.'}
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Service Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested On</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredRequests.map((request) => (
+                <tr key={request._id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">{request.title}</div>
+                    <div className="text-xs text-gray-500">{request.serviceType}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-gray-900">{request.user?.name || 'N/A'}</div>
+                    <div className="text-xs text-gray-500">{request.user?.email || 'No email'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">
+                      {request.user?.phone || 'N/A'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {request.user?.address || 'No address'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span 
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}
+                    >
+                      {request.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">
+                    {new Date(request.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
+                    <button 
+                      onClick={() => setSelectedRequest(request)} 
+                      className="text-indigo-600 hover:text-indigo-900"
+                    >
+                      View
+                    </button>
+                    {request.status === 'PENDING' && (
+                      <button 
+                        onClick={() => {
+                          setSelectedRequest(request);
+                          setShowAssignModal(true);
+                        }} 
+                        className="text-blue-600 hover:text-blue-900 ml-2"
+                      >
+                        Assign
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       
       {/* Modals */}
-      {assignModalRequest && (
-        <AssignVendorModal 
-          request={assignModalRequest} 
-          vendors={vendors} 
-          onClose={() => setAssignModalRequest(null)} 
-          onAssign={handleAssignVendor} 
+      {selectedRequest && (
+        <RequestDetailsModal 
+          request={selectedRequest} 
+          onClose={() => setSelectedRequest(null)} 
         />
       )}
       
-      {detailsModalRequest && (
-        <RequestDetailsModal 
-          request={detailsModalRequest} 
-          onClose={() => setDetailsModalRequest(null)} 
+      {showAssignModal && selectedRequest && (
+        <AssignVendorModal 
+          request={selectedRequest} 
+          vendors={vendors} 
+          onClose={() => setShowAssignModal(false)}
+          onAssign={handleAssignVendor}
         />
       )}
     </div>
