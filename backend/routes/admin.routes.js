@@ -115,7 +115,7 @@ router.patch('/requests/:id/assign', auth, isAdmin, async (req, res) => {
             return res.status(404).json({ message: 'Service request not found.' }); 
         }
         
-        // Send notification to vendor (you'll need to implement this function)
+        // Send email notification to vendor
         try {
             await sendVendorAssignmentNotification({
                 vendorEmail: vendorProfile.user.email,
@@ -135,7 +135,7 @@ router.patch('/requests/:id/assign', auth, isAdmin, async (req, res) => {
                 }
             });
         } catch (notifError) {
-            console.error('Error sending vendor notification:', notifError);
+            console.error('Error sending vendor email notification:', notifError);
             // Don't fail the request if notification fails
         }
         
