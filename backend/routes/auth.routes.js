@@ -105,18 +105,34 @@ router.post('/forgot-password', async (req, res) => {
       { expiresIn: '1h' }
     );
 
-    // In a real app, you would send an email with this token
-    // For now, we'll just return it in the response
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}&id=${user._id}`;
+    // Get the frontend URL from environment variables or fallback to localhost
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
     
-    console.log('Password reset URL:', resetUrl); // For development only
+    // In production, you should implement email sending here
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        // Uncomment and implement email sending in production
+        // await sendPasswordResetEmail(user.email, resetUrl);
+        console.log(`Password reset email would be sent to: ${user.email}`);
+        console.log(`Reset URL: ${resetUrl}`);
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        return res.status(500).json({ 
+          message: 'Error sending password reset email. Please try again later.' 
+        });
+      }
+    } else {
+      // In development, log the reset URL to the console
+      console.log('Development - Password reset URL:', resetUrl);
+    }
 
-    // In production, you would send an email here
-    // await sendPasswordResetEmail(user.email, resetUrl);
-
+    // Always return the same message whether in development or production
+    // to avoid revealing whether an email exists in the system
     res.json({ 
       message: 'If an account with that email exists, a password reset link has been sent',
-      resetToken // Only for development - remove in production
+      // Only include resetToken in development for testing
+      ...(process.env.NODE_ENV !== 'production' && { resetToken })
     });
   } catch (error) {
     console.error('Forgot password error:', error);

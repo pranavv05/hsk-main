@@ -46,7 +46,7 @@ export function App() {
             <Route path="/dashboard/admin" element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </Routes>
         </Layout>
       </Router>

@@ -2,12 +2,20 @@
 
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Default to production backend URL
+const DEFAULT_API_URL = 'https://hsk-backend.onrender.com';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+// Get the API base URL from environment variables or use the default
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || DEFAULT_API_URL;
+
+// Create axios instance with base URL and default headers
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  timeout: 10000, // 10 seconds
 });
 
 // Axios interceptor to automatically attach the auth token to every request
@@ -249,7 +257,26 @@ export async function forgotPassword(email: string) {
         const response = await apiClient.post('/api/auth/forgot-password', { email });
         return response.data;
     } catch (error: any) {
-        throw new Error(error.response?.data?.message || 'Failed to send reset link.');
+        // Handle network errors
+        if (error.code === 'ECONNABORTED') {
+            throw new Error('Request timed out. Please check your internet connection and try again.');
+        }
+        
+        // Handle no response from server
+        if (!error.response) {
+            throw new Error('Unable to connect to the server. Please check your internet connection.');
+        }
+        
+        // Handle different HTTP status codes
+        const status = error.response.status;
+        if (status >= 500) {
+            throw new Error('Server error. Please try again later.');
+        } else if (status === 404) {
+            throw new Error('The requested service is currently unavailable.');
+        }
+        
+        // Use server-provided error message or default message
+        throw new Error(error.response?.data?.message || 'Failed to send reset link. Please try again.');
     }
 }
 
