@@ -1,24 +1,48 @@
 // backend/services/notification.service.js
 const nodemailer = require('nodemailer');
+const path = require('path');
+const fs = require('fs');
 
-// Validate required environment variables
-const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
-const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+// Load environment variables from .env file if not in production
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.join(__dirname, '../../.env');
+  if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+    console.log('✅ Loaded environment variables from .env file');
+  } else {
+    console.warn('⚠️  .env file not found, using system environment variables');
+  }
+}
 
 // Log configuration status
-console.log('Email Notification Service Initializing...');
+console.log('\n📧 Email Notification Service Initializing...');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 
-if (missingVars.length > 0) {
-  const errorMsg = `Missing required email configuration in environment variables: ${missingVars.join(', ')}`;
-  console.error('❌', errorMsg);
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(errorMsg);
-  } else {
-    console.warn('⚠️  Running in development mode with incomplete email configuration. Emails will not be sent.');
-  }
+// SMTP Configuration with defaults
+const smtpConfig = {
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  user: process.env.SMTP_USER || process.env.EMAIL_USER, // Support both SMTP_USER and EMAIL_USER
+  pass: process.env.SMTP_PASS || process.env.EMAIL_PASS, // Support both SMTP_PASS and EMAIL_PASS
+  from: process.env.EMAIL_FROM || 'Hindu Seva Kendra <noreply@hsk.com>'
+};
+
+// Check if we have the minimum required configuration
+const hasSmtpConfig = smtpConfig.user && smtpConfig.pass;
+
+// Log configuration status
+if (hasSmtpConfig) {
+  console.log('✅ SMTP Configuration:');
+  console.log(`- Host: ${smtpConfig.host}:${smtpConfig.port}`);
+  console.log(`- Secure: ${smtpConfig.secure}`);
+  console.log(`- User: ${smtpConfig.user.replace(/./g, '*').slice(0, 3) + smtpConfig.user.slice(-2)}`);
+  console.log(`- From: ${smtpConfig.from}`);
+} else if (process.env.NODE_ENV === 'production') {
+  console.warn('⚠️  SMTP credentials not found. Email notifications will be disabled.');
+  console.warn('Please set SMTP_USER, SMTP_PASS, and other SMTP_* environment variables in production.');
 } else {
-  console.log('✅ Email configuration verified');
+  console.warn('⚠️  SMTP credentials not found. Using test email account for development.');
 }
 
 // Create a test email configuration
@@ -47,24 +71,31 @@ const createTestAccount = async () => {
 
 // Configure email transporter
 const createTransporter = async () => {
-  try {
+  // Use test account in development if no SMTP config
+  if (!hasSmtpConfig && process.env.NODE_ENV !== 'production') {
+    console.log('ℹ️  No SMTP config found, using test email account');
     const testConfig = await createTestAccount();
-    
-    const config = testConfig || {
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      debug: process.env.NODE_ENV !== 'production'
-    };
+    return nodemailer.createTransport(testConfig);
+  }
 
+  // Use production SMTP config
+  const config = {
+    host: smtpConfig.host,
+    port: smtpConfig.port,
+    secure: smtpConfig.secure,
+    requireTLS: true,
+    auth: {
+      user: smtpConfig.user,
+      pass: smtpConfig.pass
+    },
+    tls: {
+      rejectUnauthorized: false
+    },
+    debug: process.env.NODE_ENV !== 'production',
+    logger: true
+  };
+
+  try {
     const transporter = nodemailer.createTransport(config);
 
     // Verify connection configuration
@@ -72,12 +103,8 @@ const createTransporter = async () => {
       await transporter.verify();
       console.log('✅ SMTP connection verified');
       
-      if (testConfig) {
+      if (!hasSmtpConfig) {
         console.log('📧 Test email account created. Preview URL: https://ethereal.email');
-        console.log('Test credentials:', {
-          user: config.auth.user,
-          pass: config.auth.pass
-        });
       }
       
       return transporter;
@@ -89,9 +116,10 @@ const createTransporter = async () => {
         stack: verifyError.stack
       });
       
-      if (!testConfig) {
+      if (process.env.NODE_ENV !== 'production') {
         console.warn('⚠️  Falling back to test email account due to SMTP configuration error');
-        return createTransporter(true); // Force test account
+        const testConfig = await createTestAccount();
+        return nodemailer.createTransport(testConfig);
       }
       
       throw verifyError;
