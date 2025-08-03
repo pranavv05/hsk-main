@@ -2,6 +2,14 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
+console.log('Email Service Config:', {
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: process.env.SMTP_SECURE,
+  user: process.env.SMTP_USER ? '***' : 'MISSING',
+  from: process.env.EMAIL_FROM
+});
+
 // Create a transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -11,6 +19,12 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  tls: {
+    // Do not fail on invalid certs
+    rejectUnauthorized: false
+  },
+  debug: true, // show debug output
+  logger: true // log information in console
 });
 
 /**

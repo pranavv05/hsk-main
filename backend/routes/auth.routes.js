@@ -120,13 +120,15 @@ router.post('/forgot-password', async (req, res) => {
     const resetUrl = `${baseUrl}/reset-password?token=${resetToken}&userId=${user._id}`;
     
     try {
-      // Send the password reset email
-      await sendPasswordResetEmail(user.email, resetUrl);
+      console.log('Attempting to send password reset email to:', user.email);
+      console.log('Reset URL:', resetUrl);
       
-      // In development, still log the reset URL to the console for testing
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Development - Password reset URL:', resetUrl);
-      }
+      // Send the password reset email
+      const emailResult = await sendPasswordResetEmail(user.email, resetUrl);
+      console.log('Email send result:', emailResult);
+      
+      // Always log the reset URL for debugging
+      console.log('Password reset URL:', resetUrl);
     } catch (emailError) {
       console.error('Failed to send password reset email:', emailError);
       // In production, don't reveal the error details to the client
