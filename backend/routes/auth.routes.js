@@ -159,7 +159,10 @@ router.post('/reset-password', async (req, res) => {
   try {
     const { token, userId, newPassword } = req.body;
     
+    console.log('Reset password request received:', { userId, token: token ? 'token-present' : 'missing-token' });
+    
     if (!token || !userId || !newPassword) {
+      console.log('Missing required fields for password reset');
       return res.status(400).json({ message: 'Token, user ID, and new password are required' });
     }
 
@@ -167,26 +170,51 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
+    // Find user by ID
     const user = await User.findById(userId);
     if (!user) {
+      console.log('User not found with ID:', userId);
       return res.status(400).json({ message: 'Invalid or expired reset token' });
     }
 
     try {
-      // Verify the token using the user's current password in the secret
-      const decoded = jwt.verify(token, process.env.JWT_SECRET + user.password);
+      console.log('Verifying token for user:', user.email);
+      
+      // Verify the token using the same secret used to sign it
+      const secret = process.env.JWT_SECRET + user.password;
+      const decoded = jwt.verify(token, secret);
+      
+      console.log('Token verified successfully. Updating password...');
       
       // Update the password
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
       
-      // Invalidate the token by changing the password (implicitly invalidates the JWT)
+      // Save the user with the new password
       await user.save();
       
+      console.log('Password updated successfully for user:', user.email);
       res.json({ message: 'Password has been reset successfully' });
+      
     } catch (error) {
-      console.error('Token verification error:', error);
-      return res.status(400).json({ message: 'Invalid or expired reset token' });
+      console.error('Token verification failed:', {
+        error: error.message,
+        name: error.name,
+        expiredAt: error.expiredAt
+      });
+      
+      if (error.name === 'TokenExpiredError') {
+        return res.status(400).json({ message: 'Reset token has expired. Please request a new password reset.' });
+      }
+      
+      return res.status(400).json({ 
+        message: 'Invalid or expired reset token',
+        // In development, include more details
+        ...(process.env.NODE_ENV !== 'production' && { 
+          error: error.message,
+          hint: 'Make sure the token was not used already and is not expired' 
+        })
+      });
     }
   } catch (error) {
     console.error('Reset password error:', error);
