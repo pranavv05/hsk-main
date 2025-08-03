@@ -12,30 +12,52 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:5173',
   'https://hsk-main.vercel.app',
-  'https://hsk-main.vercel.app/',
   'https://hsk-backend.onrender.com',
+  'https://hindusevakendra.in',
+  'https://www.hindusevakendra.in',
   process.env.FRONTEND_URL
-].filter(Boolean); // Remove any undefined values
+].filter(Boolean);
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
-    if (!origin) return callback(null, true);
+// CORS Middleware
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow requests with no origin (like mobile apps, curl, Postman) or from allowed origins
+  if (!origin || allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin || '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Credentials', 'true');
     
-    // Check if the origin is in the allowed list
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
-      return callback(new Error(msg), false);
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
+  } else {
+    // Origin not allowed
+    return res.status(403).json({
+      success: false,
+      error: 'Not allowed by CORS',
+      details: `The origin '${origin}' is not allowed to access this resource.`
+    });
+  }
+  
+  next();
+});
 
-// Middleware
-app.use(cors(corsOptions));
+// Regular CORS for other routes
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // API Routes
