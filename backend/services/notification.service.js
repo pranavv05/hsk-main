@@ -2,34 +2,117 @@
 const nodemailer = require('nodemailer');
 
 // Validate required environment variables
-const requiredEnvVars = ['EMAIL_SERVICE', 'EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
+const requiredEnvVars = ['EMAIL_USER', 'EMAIL_PASS', 'EMAIL_FROM'];
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
-if (missingVars.length > 0 && process.env.NODE_ENV === 'production') {
-  console.error('Missing required email configuration in environment variables:', missingVars.join(', '));
-  console.error('Email notifications will not work until this is fixed.');
+// Log configuration status
+console.log('Email Notification Service Initializing...');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+if (missingVars.length > 0) {
+  const errorMsg = `Missing required email configuration in environment variables: ${missingVars.join(', ')}`;
+  console.error('❌', errorMsg);
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(errorMsg);
+  } else {
+    console.warn('⚠️  Running in development mode with incomplete email configuration. Emails will not be sent.');
+  }
+} else {
+  console.log('✅ Email configuration verified');
 }
 
-// Configure email transporter
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false // Only for development with self-signed certificates
+// Create a test email configuration
+const createTestAccount = async () => {
+  if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+    try {
+      const testAccount = await nodemailer.createTestAccount();
+      console.log('✅ Using Ethereal test account for email');
+      return {
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass
+        },
+        debug: true
+      };
+    } catch (error) {
+      console.error('Failed to create test email account:', error);
+      throw error;
+    }
   }
-});
+  return null;
+};
 
-// Verify connection configuration
-transporter.verify(function(error, success) {
-  if (error) {
-    console.error('Error verifying email transporter:', error);
-  } else {
-    console.log('Email server is ready to take our messages');
+// Configure email transporter
+const createTransporter = async () => {
+  try {
+    const testConfig = await createTestAccount();
+    
+    const config = testConfig || {
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      requireTLS: true,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      debug: process.env.NODE_ENV !== 'production'
+    };
+
+    const transporter = nodemailer.createTransport(config);
+
+    // Verify connection configuration
+    try {
+      await transporter.verify();
+      console.log('✅ SMTP connection verified');
+      
+      if (testConfig) {
+        console.log('📧 Test email account created. Preview URL: https://ethereal.email');
+        console.log('Test credentials:', {
+          user: config.auth.user,
+          pass: config.auth.pass
+        });
+      }
+      
+      return transporter;
+    } catch (verifyError) {
+      console.error('❌ SMTP Connection Error:', {
+        code: verifyError.code,
+        command: verifyError.command,
+        message: verifyError.message,
+        stack: verifyError.stack
+      });
+      
+      if (!testConfig) {
+        console.warn('⚠️  Falling back to test email account due to SMTP configuration error');
+        return createTransporter(true); // Force test account
+      }
+      
+      throw verifyError;
+    }
+  } catch (error) {
+    console.error('❌ Failed to create email transporter:', error);
+    throw error;
   }
-});
+};
+
+// Initialize transporter
+let transporter;
+(async () => {
+  try {
+    transporter = await createTransporter();
+  } catch (error) {
+    console.error('❌ Failed to initialize email service:', error);
+    // Continue without email functionality
+    transporter = { sendMail: () => Promise.reject(new Error('Email service not initialized')) };
+  }
+})();
 
 /**
  * Sends an email notification to a vendor when they're assigned a new service request
@@ -48,6 +131,11 @@ const sendVendorAssignmentNotification = async ({
 }) => {
   const maxRetries = 2;
   const retryDelay = 2000; // 2 seconds
+  
+  // Log notification attempt
+  console.log(`\n📨 Sending vendor assignment notification to: ${vendorEmail}`);
+  console.log('Request ID:', request.id);
+  console.log('Retry attempt:', retryCount);
   
   try {
     // Validate required fields
@@ -97,12 +185,35 @@ const sendVendorAssignmentNotification = async ({
 
     // Send the email with retry logic
     try {
+      if (!transporter || !transporter.sendMail) {
+        throw new Error('Email service not properly initialized');
+      }
+      
       const info = await transporter.sendMail(mailOptions);
-      console.log(`Notification sent to ${vendorEmail} (Message ID: ${info.messageId})`);
+      
+      // Log success with preview URL for test emails
+      let successMessage = `✅ Notification sent to ${vendorEmail}`;
+      if (info.messageId) {
+        successMessage += ` (Message ID: ${info.messageId})`;
+        
+        // For test emails, log the preview URL
+        if (info.response && info.response.includes('ethereal.email')) {
+          successMessage += `\n📧 Preview: ${nodemailer.getTestMessageUrl(info)}`;
+        }
+      }
+      
+      console.log(successMessage);
       return true;
     } catch (sendError) {
+      const errorMessage = `❌ Failed to send email (Attempt ${retryCount + 1}/${maxRetries + 1}): ${sendError.message}`;
+      console.error(errorMessage);
+      
+      if (sendError.response) {
+        console.error('SMTP Error Response:', sendError.response);
+      }
+      
       if (retryCount < maxRetries) {
-        console.warn(`Attempt ${retryCount + 1} failed. Retrying in ${retryDelay}ms...`, sendError.message);
+        console.log(`⏳ Retrying in ${retryDelay/1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
         return sendVendorAssignmentNotification({
           vendorEmail,
@@ -111,7 +222,8 @@ const sendVendorAssignmentNotification = async ({
           retryCount: retryCount + 1
         });
       }
-      throw sendError; // Re-throw if max retries reached
+      
+      throw new Error(`Failed after ${maxRetries + 1} attempts: ${sendError.message}`);
     }
   } catch (error) {
     const errorMessage = `Failed to send notification to ${vendorEmail}: ${error.message}`;
