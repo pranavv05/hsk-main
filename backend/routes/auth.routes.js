@@ -22,31 +22,53 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Please enter a valid 10-digit phone number' });
     }
 
-    // Check if email already exists
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'Email already registered' });
-    }
-
-    // Check if phone number already exists
-    const existingPhoneUser = await User.findOne({ phone });
-    if (existingPhoneUser) {
-      return res.status(400).json({ message: 'Phone number already registered' });
-    }
-
-    // Create new user with phone number
-    user = new User({ name, email, phone, password, role, address });
-    await user.save();
-    console.log(`✅ User saved successfully: ${user.email}`);
-
-   // If the role is 'vendor', create the corresponding vendor profile
-    if (role === 'vendor') {
-      const newVendor = new Vendor({
-        user: user._id,
-        fullName: user.name,
+    // Check if user with this email already exists with the same role
+    let existingUser = await User.findOne({ email, role });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false,
+        message: `User already registered as a ${role} with this email` 
       });
-      await newVendor.save();
-      console.log(`✅ Vendor profile created for: ${user.email}`);
+    }
+
+    // Check if user exists with the same email but different role
+    let user = await User.findOne({ email });
+    
+    if (user) {
+      // User exists with different role, create a new user with the new role
+      user = new User({ 
+        name, 
+        email, 
+        phone, 
+        password, 
+        role, 
+        address 
+      });
+      
+      await user.save();
+      console.log(`✅ New ${role} account created for existing email: ${user.email}`);
+    } else {
+      // Create new user if doesn't exist at all
+      user = new User({ name, email, phone, password, role, address });
+      await user.save();
+      console.log(`✅ New user registered successfully as ${role}: ${user.email}`);
+    }
+
+    // If the role is 'vendor', create/update the corresponding vendor profile
+    if (role === 'vendor') {
+      let vendor = await Vendor.findOne({ user: user._id });
+      
+      if (!vendor) {
+        // Create new vendor profile if doesn't exist
+        vendor = new Vendor({
+          user: user._id,
+          fullName: user.name,
+        });
+        await vendor.save();
+        console.log(`✅ Vendor profile created for: ${user.email}`);
+      } else {
+        console.log(`ℹ️ Vendor profile already exists for: ${user.email}`);
+      }
     }
 
     const payload = { user: { id: user.id, role: user.role } };
