@@ -424,50 +424,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-      {/* Testimonials */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-6">
-            What Our Users Say
-          </h2>
-          <p className="text-gray-600 text-center max-w-2xl mx-auto mb-12">
-            Don't just take our word for it. See what our users have to say
-            about their experience.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[{
-            name: 'Rajesh Kumar',
-            role: 'Homeowner',
-            image: 'https://randomuser.me/api/portraits/men/32.jpg',
-            testimonial: 'I found a reliable plumber within hours. The service quality was excellent and pricing transparent.'
-          }, {
-            name: 'Priya Sharma',
-            role: 'Vendor - Electrician',
-            image: 'https://randomuser.me/api/portraits/women/44.jpg',
-            testimonial: 'My business has grown significantly since joining Hindu Seva Kendra. The platform connects me directly with customers.'
-          }, {
-            name: 'Amit Patel',
-            role: 'Office Manager',
-            image: 'https://randomuser.me/api/portraits/men/22.jpg',
-            testimonial: 'We use Hindu Seva Kendra for all our office maintenance needs. Consistent quality and professional service every time.'
-          }].map((testimonial, index) => <div key={index} className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <div className="flex items-center mb-4">
-                  <img src={testimonial.image} alt={testimonial.name} className="w-14 h-14 rounded-full mr-4 border-2 border-blue-200" />
-                  <div>
-                    <h4 className="font-semibold">{testimonial.name}</h4>
-                    <p className="text-blue-600 text-sm">{testimonial.role}</p>
-                  </div>
-                </div>
-                <p className="text-gray-700 italic">
-                  "{testimonial.testimonial}"
-                </p>
-                <div className="mt-4 flex">
-                  {[1, 2, 3, 4, 5].map(star => <Star key={star} className="w-5 h-5 text-yellow-400" fill="currentColor" />)}
-                </div>
-              </div>)}
-          </div>
-        </div>
-      </section>
+      
       {/* CTA Section */}
       <section className="bg-blue-700 text-white py-16">
         <div className="container mx-auto px-4 text-center">
