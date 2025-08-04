@@ -179,25 +179,25 @@ const About = () => {
               {
                 name: 'Pradip Mishra',
                 role: 'Founder & CEO',
-                image: 'https://randomuser.me/api/portraits/men/32.jpg',
+                image: '',
                 bio: 'Visionary leader with a passion for community service and digital transformation.'
               },
               {
                 name: 'Durgesh Rajpurohit',
                 role: 'CTO',
-                image: 'https://randomuser.me/api/portraits/men/45.jpg',
+                image: '',
                 bio: 'Technology expert driving our platform\'s innovation and technical excellence.'
               },
               {
                 name: 'Kapil Kanodiya',
                 role: 'Operations Head',
-                image: 'https://randomuser.me/api/portraits/men/68.jpg',
+                image: '',
                 bio: 'Ensures smooth operations and exceptional service delivery across all platforms.'
               },
               {
                 name: 'Rahul Shah',
                 role: 'Marketing Director',
-                image: 'https://randomuser.me/api/portraits/men/22.jpg',
+                image: '',
                 bio: 'Creative mind behind our brand presence and community engagement strategies.'
               }
             ].map((member, index) => (
