@@ -51,75 +51,78 @@ router.patch('/:id/cancel', auth, async (req, res) => {
 
 // --- GET /api/requests/vendor - VENDOR gets requests relevant to them ---
 router.get('/vendor', auth, async (req, res) => {
-    try {
-        const vendorProfile = await Vendor.findOne({ user: req.user.id });
-        if (!vendorProfile) { return res.status(404).json({ message: 'Vendor profile not found.' }); }
+  try {
+    const vendorProfile = await Vendor.findOne({ user: req.user.id });
+    if (!vendorProfile) { return res.status(404).json({ message: 'Vendor profile not found.' }); }
 
-        const requests = await ServiceRequest.find({
-            $or: [
-                { status: 'PENDING', serviceType: vendorProfile.serviceType },
-                { vendor: req.user.id }
-            ]
-        }).populate('user', 'name email phone address').sort({ createdAt: -1 });
+    // Fix for ghost requests: Ensure we don't query with undefined/null serviceType
+    const serviceTypeFilter = vendorProfile.serviceType || "___NO_SERVICE_TYPE_DEFINED___";
 
-        const formattedRequests = requests.map(req => ({
-            ...req.toObject(),
-            userName: req.user ? req.user.name : 'N/A',
-            userContact: req.user ? req.user.email : 'N/A',
-            userPhone: req.user?.phone || 'Not provided',
-            userAddress: req.user?.address || 'Not provided'
-        }));
-        res.json(formattedRequests);
-    } catch (err) {
-        console.error("Error in GET /api/requests/vendor:", err.message);
-        res.status(500).send('Server Error');
-    }
+    const requests = await ServiceRequest.find({
+      $or: [
+        { status: 'PENDING', serviceType: serviceTypeFilter },
+        { vendor: req.user.id }
+      ]
+    }).populate('user', 'name email phone address').sort({ createdAt: -1 });
+
+    const formattedRequests = requests.map(req => ({
+      ...req.toObject(),
+      userName: req.user ? req.user.name : 'N/A',
+      userContact: req.user ? req.user.email : 'N/A',
+      userPhone: req.user?.phone || 'Not provided',
+      userAddress: req.user?.address || 'Not provided'
+    }));
+    res.json(formattedRequests);
+  } catch (err) {
+    console.error("Error in GET /api/requests/vendor:", err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // --- PATCH /api/requests/:id/accept - VENDOR accepts a service request ---
 router.patch('/:id/accept', auth, async (req, res) => {
-    try {
-        const request = await ServiceRequest.findById(req.params.id);
-        if (!request) { return res.status(404).json({ message: 'Request not found.' }); }
-        request.vendor = req.user.id;
-        request.status = 'IN_PROGRESS';
-        await request.save();
-        res.json(request);
-    } catch (err) {
-        console.error("Error in PATCH /:id/accept:", err.message);
-        res.status(500).send('Server Error');
-    }
+  try {
+    const request = await ServiceRequest.findById(req.params.id);
+    if (!request) { return res.status(404).json({ message: 'Request not found.' }); }
+    request.vendor = req.user.id;
+    request.status = 'IN_PROGRESS';
+    await request.save();
+    res.json(request);
+  } catch (err) {
+    console.error("Error in PATCH /:id/accept:", err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // --- PATCH /api/requests/:id/complete - VENDOR completes a service request ---
 router.patch('/:id/complete', auth, async (req, res) => {
-    try {
-        const request = await ServiceRequest.findByIdAndUpdate(req.params.id, { status: 'COMPLETED' }, { new: true });
-        if (!request) { return res.status(404).json({ message: 'Request not found.' }); }
-        await Vendor.findOneAndUpdate({ user: req.user.id }, { $inc: { servicesCompleted: 1 } });
-        res.json(request);
-    } catch (err) {
-        console.error("Error in PATCH /:id/complete:", err.message);
-        res.status(500).send('Server Error');
-    }
+  try {
+    const request = await ServiceRequest.findByIdAndUpdate(req.params.id, { status: 'COMPLETED' }, { new: true });
+    if (!request) { return res.status(404).json({ message: 'Request not found.' }); }
+    await Vendor.findOneAndUpdate({ user: req.user.id }, { $inc: { servicesCompleted: 1 } });
+    res.json(request);
+  } catch (err) {
+    console.error("Error in PATCH /:id/complete:", err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // --- GET /api/requests/all - ADMIN gets all service requests ---
 router.get('/all', auth, (req, res, next) => {
-    if (req.user.role !== 'admin') { return res.status(403).json({ message: 'Forbidden: Admin access required.' }); }
-    next();
+  if (req.user.role !== 'admin') { return res.status(403).json({ message: 'Forbidden: Admin access required.' }); }
+  next();
 }, async (req, res) => {
-    try {
-        const allRequests = await ServiceRequest.find()
-            .populate('user', 'name')
-            .populate('vendor', 'name')
-            .sort({ createdAt: -1 })
-            .lean(); // Use .lean() for faster, plain JavaScript objects
-        return res.json(allRequests);
-    } catch (err) {
-        console.error("Error in GET /api/requests/all:", err.message);
-        return res.status(500).send('Server Error');
-    }
+  try {
+    const allRequests = await ServiceRequest.find()
+      .populate('user', 'name')
+      .populate('vendor', 'name')
+      .sort({ createdAt: -1 })
+      .lean(); // Use .lean() for faster, plain JavaScript objects
+    return res.json(allRequests);
+  } catch (err) {
+    console.error("Error in GET /api/requests/all:", err.message);
+    return res.status(500).send('Server Error');
+  }
 });
 
 module.exports = router;

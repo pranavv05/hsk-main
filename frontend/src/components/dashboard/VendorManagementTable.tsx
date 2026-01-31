@@ -1,6 +1,7 @@
-// src/components/dashboard/VendorManagementTable.tsx
 import React, { useState, useEffect } from 'react';
-import { fetchAdminVendors, toggleVendorVerification } from '../../utils/apiService';
+import ReactDOM from 'react-dom';
+import { fetchAdminVendors, toggleVendorVerification, deleteVendor } from '../../utils/apiService';
+import { Trash2 } from 'lucide-react';
 
 // --- Interface with all vendor details for the modal ---
 interface Vendor {
@@ -19,49 +20,102 @@ interface Vendor {
 }
 
 // --- The Modal component to display vendor details ---
-const VendorDetailsModal = ({ vendor, onClose }: { vendor: Vendor; onClose: () => void; }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
-            <div className="flex items-start space-x-6">
-                <img 
-                    src={vendor.photoUrl || `https://ui-avatars.com/api/?name=${vendor.fullName.replace(/\s/g, '+')}&background=random`} 
-                    alt={vendor.fullName} 
-                    className="h-24 w-24 rounded-full object-cover" 
-                />
-                <div>
-                    <h2 className="text-2xl font-bold">{vendor.fullName}</h2>
-                    <p className="text-gray-600">{vendor.serviceType}</p>
-                    <span className={`mt-2 inline-block px-3 py-1 rounded-full text-sm font-semibold ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                        {vendor.isVerified ? 'Verified' : 'Pending Verification'}
-                    </span>
+const VendorDetailsModal = ({ vendor, onClose }: { vendor: Vendor; onClose: () => void; }) => {
+    return ReactDOM.createPortal(
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-[9999] p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in-up">
+                {/* Header */}
+                <div className="p-6 border-b border-gray-100 flex justify-between items-start bg-gray-50/50">
+                    <div className="flex items-center space-x-4">
+                         <img 
+                            src={vendor.photoUrl || `https://ui-avatars.com/api/?name=${vendor.fullName.replace(/\s/g, '+')}&background=random`} 
+                            alt={vendor.fullName} 
+                            className="h-16 w-16 rounded-full object-cover border-2 border-white shadow-md" 
+                        />
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">{vendor.fullName}</h2>
+                            <div className="flex items-center gap-2 mt-1">
+                                 <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                    {vendor.serviceType}
+                                 </span>
+                                 <span className={`px-2 py-0.5 rounded text-xs font-medium ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                    {vendor.isVerified ? 'Verified' : 'Pending Verification'}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={onClose} 
+                        className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-500 transition-colors"
+                        title="Close"
+                    >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                
+                {/* Scrollable Content */}
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-2">Description</h4>
+                        <p className="text-gray-600 leading-relaxed bg-gray-50 p-4 rounded-lg border border-gray-100">
+                            {vendor.description || "No description provided."}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                        <div className="space-y-4">
+                            <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase">Contact Email</h4>
+                                <p className="text-gray-900 font-medium">{vendor.user.email}</p>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase">Phone Number</h4>
+                                <p className="text-gray-900 font-medium">{vendor.phone || 'N/A'}</p>
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                             <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase">Experience</h4>
+                                <p className="text-gray-900 font-medium">{vendor.experience ? `${vendor.experience} Years` : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-semibold text-gray-500 uppercase">Joined On</h4>
+                                <p className="text-gray-900 font-medium">{new Date(vendor.createdAt).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Uploaded Documents</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            {/* Document Cards */}
+                            <a href={vendor.idProofUrl} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all ${vendor.idProofUrl ? 'border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700' : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'}`}>
+                                <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+                                <span className="text-sm font-medium">ID Proof</span>
+                            </a>
+                            <a href={vendor.addressProofUrl} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all ${vendor.addressProofUrl ? 'border-purple-200 bg-purple-50 hover:bg-purple-100 text-purple-700' : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'}`}>
+                                <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                <span className="text-sm font-medium">Address Proof</span>
+                            </a>
+                             <a href={vendor.photoUrl} target="_blank" rel="noopener noreferrer" className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 border-dashed transition-all ${vendor.photoUrl ? 'border-pink-200 bg-pink-50 hover:bg-pink-100 text-pink-700' : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'}`}>
+                                <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span className="text-sm font-medium">Photo</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                    <button onClick={onClose} className="px-6 py-2 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 shadow-sm transition-colors">
+                        Close
+                    </button>
                 </div>
             </div>
-            
-            <div className="mt-4 border-t pt-4">
-                <p className="text-gray-700">{vendor.description}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mt-4 border-t pt-4 text-sm">
-                <div><h4 className="font-semibold text-gray-500">Email</h4><p>{vendor.user.email}</p></div>
-                <div><h4 className="font-semibold text-gray-500">Phone</h4><p>{vendor.phone || 'N/A'}</p></div>
-                <div><h4 className="font-semibold text-gray-500">Experience</h4><p>{vendor.experience || 0} years</p></div>
-                <div><h4 className="font-semibold text-gray-500">Joined On</h4><p>{new Date(vendor.createdAt).toLocaleDateString()}</p></div>
-            </div>
-
-            <div className="mt-4 border-t pt-4">
-                <h4 className="font-semibold text-gray-500 text-sm mb-2">Uploaded Documents</h4>
-                <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 text-sm">
-                    {vendor.idProofUrl ? <a href={vendor.idProofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View ID Proof</a> : <span className="text-gray-400">ID Proof Not Uploaded</span>}
-                    {vendor.addressProofUrl ? <a href={vendor.addressProofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Address Proof</a> : <span className="text-gray-400">Address Proof Not Uploaded</span>}
-                </div>
-            </div>
-
-            <div className="flex justify-end mt-6">
-                <button onClick={onClose} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Close</button>
-            </div>
-        </div>
-    </div>
-);
+        </div>,
+        document.body
+    );
+};
 
 export function VendorManagementTable() {
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -69,11 +123,8 @@ export function VendorManagementTable() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // State to manage which vendor is being viewed in the modal
   const [viewingVendor, setViewingVendor] = useState<Vendor | null>(null);
 
-  // Filter vendors based on search term
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredVendors(vendors);
@@ -89,11 +140,6 @@ export function VendorManagementTable() {
     }
   }, [searchTerm, vendors]);
 
-  // Update filtered vendors when vendors data changes
-  useEffect(() => {
-    setFilteredVendors(vendors);
-  }, [vendors]);
-
   useEffect(() => {
     const loadVendors = async () => {
       try {
@@ -107,7 +153,7 @@ export function VendorManagementTable() {
     };
     loadVendors();
   }, []);
-  
+
   const handleVerificationToggle = async (vendorId: string, currentStatus: boolean) => {
     try {
       setVendors(vendors.map(v => v._id === vendorId ? { ...v, isVerified: !currentStatus } : v));
@@ -118,85 +164,80 @@ export function VendorManagementTable() {
     }
   };
 
+  const handleDelete = async (vendorId: string) => {
+    if (!window.confirm('Are you sure you want to delete this vendor? This will also delete their linked User account. This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deleteVendor(vendorId);
+      setVendors(vendors.filter(v => v._id !== vendorId));
+      alert('Vendor deleted successfully');
+    } catch (err: any) {
+      alert(`Failed to delete: ${err.message}`);
+    }
+  };
+
   return (
-    <div className="p-4">
+    <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/20 overflow-hidden">
       {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative max-w-md">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <input
+      <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50/30">
+        <h3 className="text-xl font-bold text-gray-800">Vendors ({filteredVendors.length})</h3>
+        <div className="relative">
+             <input
             type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-            placeholder="Search vendors by name, email, or service..."
+            className="pl-4 pr-4 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm w-64 transition-all"
+            placeholder="Search vendors..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <p className="mt-1 text-sm text-gray-500">
-          {filteredVendors.length} {filteredVendors.length === 1 ? 'vendor' : 'vendors'} found
-        </p>
       </div>
 
       {loading ? (
-        <p>Loading vendors...</p>
+        <p className="p-6 text-center text-gray-500">Loading vendors...</p>
       ) : error ? (
-        <p className="text-red-500">Could not load vendors: {error}</p>
+        <p className="p-6 text-center text-red-500">Could not load vendors: {error}</p>
       ) : filteredVendors.length === 0 ? (
         <div className="text-center py-12">
-          <svg
-            className="mx-auto h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No vendors found</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {searchTerm
-              ? 'Try adjusting your search or filter to find what you\'re looking for.'
-              : 'There are currently no vendors in the system.'}
-          </p>
+          <p className="text-gray-500">No vendors found.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Service</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Service</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {filteredVendors.map(vendor => (
-                <tr key={vendor._id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{vendor.fullName}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{vendor.serviceType}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                <tr key={vendor._id} className="hover:bg-blue-50/30 transition-colors">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{vendor.fullName}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{vendor.user.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{vendor.serviceType}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                       {vendor.isVerified ? 'Verified' : 'Pending'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                    {/* --- THIS IS THE RESTORED VIEW BUTTON --- */}
-                    <button onClick={() => setViewingVendor(vendor)} className="text-indigo-600 hover:text-indigo-900">
+                  <td className="px-6 py-4 text-right text-sm font-medium space-x-3">
+                    <button onClick={() => setViewingVendor(vendor)} className="text-indigo-600 hover:text-indigo-900 transition-colors">
                       View
                     </button>
-                    <button onClick={() => handleVerificationToggle(vendor._id, vendor.isVerified)} className="text-blue-600 hover:text-blue-800">
+                    <button onClick={() => handleVerificationToggle(vendor._id, vendor.isVerified)} className="text-blue-600 hover:text-blue-800 transition-colors">
                       {vendor.isVerified ? 'Un-verify' : 'Verify'}
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(vendor._id)} 
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors inline-flex align-middle"
+                      title="Delete Vendor"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

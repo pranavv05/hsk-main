@@ -177,10 +177,43 @@ export function VendorDashboard() {
               </div>
               <div>
                 <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-1">Service Type</label>
-                <select id="serviceType" name="serviceType" value={profileForm.serviceType || ''} onChange={handleInputChange} className={`w-full px-3 py-2 border rounded-md ${formErrors.serviceType ? 'border-red-500' : 'border-gray-300'}`}>
+                <select 
+                  id="serviceType" 
+                  name="serviceType" 
+                  value={availableServices.some(s => s.name === profileForm.serviceType) ? profileForm.serviceType : (profileForm.serviceType && profileForm.serviceType !== 'Other' ? 'Other' : profileForm.serviceType || '')} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'Other') {
+                        setProfileForm(prev => ({...prev, serviceType: ''})); // Clear it so input shows empty or handle logically
+                        // Actually, better to keep a separate state or just signal 'Other' selected.
+                        // Let's rely on the value. If value is 'Other', we show input.
+                        // But wait, if they select 'Other', the profileForm.serviceType becomes 'Other'.
+                        // Then we need to distinguish between "User selected Other" and "User typed a detailed service".
+                        // Approach: Use a separate UI state for 'isOtherSelected' or logic.
+                        // Simpler: If value is not in availableServices and not empty, treat as custom.
+                        handleInputChange(e);
+                    } else {
+                        handleInputChange(e);
+                    }
+                  }} 
+                  className={`w-full px-3 py-2 border rounded-md ${formErrors.serviceType ? 'border-red-500' : 'border-gray-300'}`}
+                >
                   <option value="">-- Select Your Service --</option>
                   {availableServices.map(service => (<option key={service._id} value={service.name}>{service.name}</option>))}
+                  <option value="Other">Other</option>
                 </select>
+                
+                {/* Conditional Input for Other */}
+                {(profileForm.serviceType === 'Other' || (profileForm.serviceType && !availableServices.some(s => s.name === profileForm.serviceType))) && (
+                    <input 
+                        type="text" 
+                        name="customServiceType" // We'll handle this manually or merge it into serviceType on submit
+                        placeholder="Please specify your service"
+                        value={profileForm.serviceType === 'Other' ? '' : profileForm.serviceType}
+                        onChange={(e) => setProfileForm(prev => ({...prev, serviceType: e.target.value}))}
+                        className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                )}
                 {formErrors.serviceType && <p className="text-red-600 text-sm mt-1">{formErrors.serviceType}</p>}
               </div>
               <div>

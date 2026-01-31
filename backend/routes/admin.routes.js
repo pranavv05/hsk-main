@@ -24,7 +24,7 @@ router.get('/stats', auth, isAdmin, async (req, res) => {
         const totalRequests = await ServiceRequest.countDocuments();
         const pendingRequests = await ServiceRequest.countDocuments({ status: 'PENDING' });
         const completedRequests = await ServiceRequest.countDocuments({ status: 'COMPLETED' });
-        
+
         const stats = { totalUsers, totalVendors, totalRequests, pendingRequests, completedRequests };
         console.log('--- SUCCESS /api/admin/stats ---');
         return res.json(stats);
@@ -55,9 +55,9 @@ router.get('/service-requests', auth, isAdmin, async (req, res) => {
             .populate('vendor', 'name')
             .sort({ createdAt: -1 })
             .lean();
-            
+
         console.log(`Found ${requests.length} service requests.`);
-        
+
         // Debug log to check the first request's user data
         if (requests.length > 0) {
             console.log('Sample request user data:', {
@@ -68,7 +68,7 @@ router.get('/service-requests', auth, isAdmin, async (req, res) => {
                 userAddress: requests[0].user?.address
             });
         }
-        
+
         console.log('--- SUCCESS /api/admin/service-requests ---');
         return res.json(requests);
     } catch (err) {
@@ -95,26 +95,26 @@ router.patch('/requests/:id/assign', auth, isAdmin, async (req, res) => {
     console.log(`--- ENTERED /api/admin/requests/${req.params.id}/assign ---`);
     try {
         const { vendorId } = req.body;
-        
+
         // Find the vendor and populate user data
         const vendorProfile = await Vendor.findById(vendorId).populate('user');
-        if (!vendorProfile) { 
-            return res.status(404).json({ message: 'Vendor profile not found.' }); 
+        if (!vendorProfile) {
+            return res.status(404).json({ message: 'Vendor profile not found.' });
         }
-        
+
         // Update the service request with the vendor's user ID
         const updatedRequest = await ServiceRequest.findByIdAndUpdate(
             req.params.id,
             { vendor: vendorProfile.user._id, status: 'ASSIGNED' },
             { new: true }
         )
-        .populate('user', 'name email phone address')
-        .populate('vendor', 'name');
-        
-        if (!updatedRequest) { 
-            return res.status(404).json({ message: 'Service request not found.' }); 
+            .populate('user', 'name email phone address')
+            .populate('vendor', 'name');
+
+        if (!updatedRequest) {
+            return res.status(404).json({ message: 'Service request not found.' });
         }
-        
+
         // Send email notification to vendor
         try {
             await sendVendorAssignmentNotification({
@@ -138,11 +138,84 @@ router.patch('/requests/:id/assign', auth, isAdmin, async (req, res) => {
             console.error('Error sending vendor email notification:', notifError);
             // Don't fail the request if notification fails
         }
-        
+
         console.log('--- SUCCESS /api/admin/requests/assign ---');
         return res.json(updatedRequest);
     } catch (err) {
         console.error('--- ERROR in /api/admin/requests/assign ---:', err.message);
+        return res.status(500).send('Server Error');
+    }
+});
+
+// --- NEW ROUTES FOR USER/VENDOR MANAGEMENT ---
+
+// GET /api/admin/users - List all regular users
+router.get('/users', auth, isAdmin, async (req, res) => {
+    console.log('--- ENTERED /api/admin/users ---');
+    try {
+        const users = await User.find({ role: 'user' }).select('-password').lean();
+        console.log(`Found ${users.length} users.`);
+        return res.json(users);
+    } catch (err) {
+        console.error('--- ERROR in /api/admin/users ---:', err.message);
+        return res.status(500).send('Server Error');
+    }
+});
+
+// DELETE /api/admin/users/:id - Delete a user
+router.delete('/users/:id', auth, isAdmin, async (req, res) => {
+    console.log(`--- ENTERED DELETE /api/admin/users/${req.params.id} ---`);
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Also cleanup any service requests by this user? 
+        // For now, we'll leave them or maybe mark them as 'Deleted User' (TODO)
+
+        console.log(`Deleted user: ${user.email}`);
+        return res.json({ message: 'User deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        return res.status(500).send('Server Error');
+    }
+});
+
+// DELETE /api/admin/vendors/:id - Delete a vendor AND their user account
+router.delete('/vendors/:id', auth, isAdmin, async (req, res) => {
+    console.log(`--- ENTERED DELETE /api/admin/vendors/${req.params.id} ---`);
+    try {
+        // 1. Find the vendor profile
+        const vendor = await Vendor.findById(req.params.id);
+        if (!vendor) return res.status(404).json({ message: 'Vendor profile not found' });
+
+        // 2. Delete the associated User account
+        if (vendor.user) {
+            await User.findByIdAndDelete(vendor.user);
+            console.log(`Deleted associated user account: ${vendor.user}`);
+        }
+
+        // 3. Delete the Vendor profile
+        await Vendor.findByIdAndDelete(req.params.id);
+        console.log(`Deleted vendor profile: ${vendor._id}`);
+
+        return res.json({ message: 'Vendor and associated account deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting vendor:', err);
+        return res.status(500).send('Server Error');
+    }
+});
+
+// DELETE /api/admin/requests/:id - Delete a service request
+router.delete('/requests/:id', auth, isAdmin, async (req, res) => {
+    console.log(`--- ENTERED DELETE /api/admin/requests/${req.params.id} ---`);
+    try {
+        const request = await ServiceRequest.findByIdAndDelete(req.params.id);
+        if (!request) return res.status(404).json({ message: 'Service request not found' });
+
+        console.log(`Deleted service request: ${request._id}`);
+        return res.json({ message: 'Service request deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting service request:', err);
         return res.status(500).send('Server Error');
     }
 });

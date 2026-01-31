@@ -1,6 +1,6 @@
 // src/components/dashboard/ServiceRequestsTable.tsx
 import { useState, useEffect } from 'react';
-import { fetchAdminServiceRequests, fetchAdminVendors, assignVendorToRequest } from '../../utils/apiService';
+import { fetchAdminServiceRequests, fetchAdminVendors, assignVendorToRequest, deleteServiceRequest } from '../../utils/apiService';
 
 // Interfaces for our data types
 interface Request { 
@@ -204,9 +204,9 @@ export function ServiceRequestsTable() {
         request.title.toLowerCase().includes(term) ||
         request.serviceType.toLowerCase().includes(term) ||
         request.status.toLowerCase().includes(term) ||
-        request.user.name.toLowerCase().includes(term) ||
-        request.user.email.toLowerCase().includes(term) ||
-        (request.user.phone && request.user.phone.includes(term)) ||
+        (request.user?.name && request.user.name.toLowerCase().includes(term)) ||
+        (request.user?.email && request.user.email.toLowerCase().includes(term)) ||
+        (request.user?.phone && request.user.phone.includes(term)) ||
         (request.vendor?.name && request.vendor.name.toLowerCase().includes(term))
       );
       setFilteredRequests(filtered);
@@ -247,6 +247,20 @@ export function ServiceRequestsTable() {
         setRequests(updatedRequests);
         setShowAssignModal(false);
     } catch (err) { console.error("Failed to assign vendor", err); }
+  };
+
+  const handleDelete = async (requestId: string) => {
+    if (!window.confirm('Are you sure you want to delete this service request? This action cannot be undone.')) {
+        return;
+    }
+    try {
+        await deleteServiceRequest(requestId);
+        setRequests(prev => prev.filter(r => r._id !== requestId));
+        // Filtered requests will auto-update due to useEffect dependency on 'requests'
+    } catch (error) {
+        console.error('Failed to delete request:', error);
+        alert('Failed to delete request');
+    }
   };
   
   // getStatusBadgeClass is now defined at the module level
@@ -342,24 +356,32 @@ export function ServiceRequestsTable() {
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {new Date(request.createdAt).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
-                    <button 
-                      onClick={() => setSelectedRequest(request)} 
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      View
-                    </button>
-                    {request.status === 'PENDING' && (
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end space-x-3">
                       <button 
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setShowAssignModal(true);
-                        }} 
-                        className="text-blue-600 hover:text-blue-900 ml-2"
+                        onClick={() => setSelectedRequest(request)} 
+                        className="text-indigo-600 hover:text-indigo-900"
                       >
-                        Assign
+                        View
                       </button>
-                    )}
+                      {request.status === 'PENDING' && (
+                        <button 
+                          onClick={() => {
+                            setSelectedRequest(request);
+                            setShowAssignModal(true);
+                          }} 
+                          className="text-blue-600 hover:text-blue-900"
+                        >
+                          Assign
+                        </button>
+                      )}
+                      <button 
+                          onClick={() => handleDelete(request._id)}
+                          className="text-red-600 hover:text-red-900"
+                      >
+                          Delete
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

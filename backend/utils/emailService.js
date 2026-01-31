@@ -12,19 +12,18 @@ console.log('Email Service Config:', {
 
 // Create a transporter object using the default SMTP transport
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+  secure: process.env.SMTP_SECURE === 'true',
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.SMTP_USER || process.env.EMAIL_USER,
+    pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
   },
   tls: {
-    // Do not fail on invalid certs
     rejectUnauthorized: false
   },
-  debug: true, // show debug output
-  logger: true // log information in console
+  debug: true,
+  logger: true
 });
 
 /**

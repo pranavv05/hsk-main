@@ -12,6 +12,8 @@ export function Register() {
     confirmPassword: '',
     role: 'user' as 'user' | 'vendor',
     address: '',
+    serviceType: '',
+    experience: '',
   });
   const [errors, setErrors] = useState<{
     name?: string;
@@ -56,6 +58,9 @@ export function Register() {
     } else if (!/^[0-9]{10}$/.test(formData.phone)) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
     }
+
+    // Vendor specific validation removed
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -215,11 +220,19 @@ export function Register() {
             <label htmlFor="role" className="block text-sm font-medium text-gray-700">
               I want to
             </label>
-            <select id="role" name="role" value={formData.role} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
               <option value="user">Find services (I'm a user)</option>
               <option value="vendor">Provide services (I'm a vendor)</option>
             </select>
           </div>
+
+          {/* Vendor specific fields removed as per user request */}
           <div className="flex items-center">
             <input id="terms" name="terms" type="checkbox" className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">

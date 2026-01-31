@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '../components/dashboard/DashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 // CHANGED: Import from the new apiService file
-import { fetchUserServiceRequests, createServiceRequest, cancelServiceRequest } from '../utils/apiService';
+import { fetchUserServiceRequests, createServiceRequest, cancelServiceRequest, fetchServices } from '../utils/apiService';
 import { AlertCircle, PlusCircle, XCircle } from 'lucide-react';
 
 // CHANGED: The interface now uses `_id` from MongoDB.
@@ -15,31 +15,40 @@ interface ServiceRequest {
   createdAt: string;
 }
 
+interface Service { _id: string; name: string; }
+
 export function UserDashboard() {
   const { user } = useAuth();
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [availableServices, setAvailableServices] = useState<Service[]>([]);
   const [newRequest, setNewRequest] = useState({
     title: '',
     description: '',
-    serviceType: 'ELECTRICIAN'
+    serviceType: ''
   });
   const [formErrors, setFormErrors] = useState<{ title?: string; description?: string; }>({});
 
   useEffect(() => {
-    const loadServiceRequests = async () => {
+    const loadData = async () => {
       try {
-        // This now calls the REAL backend API!
-        const data = await fetchUserServiceRequests();
-        setServiceRequests(data);
+        const [requestsData, servicesData] = await Promise.all([
+          fetchUserServiceRequests(),
+          fetchServices()
+        ]);
+        setServiceRequests(requestsData);
+        setAvailableServices(servicesData);
+        if (servicesData.length > 0) {
+           setNewRequest(prev => ({ ...prev, serviceType: servicesData[0].name }));
+        }
       } catch (error) {
-        console.error('Error loading service requests:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
     };
-    loadServiceRequests();
+    loadData();
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -133,14 +142,20 @@ export function UserDashboard() {
               <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700 mb-1">
                 Service Type
               </label>
-              <select id="serviceType" name="serviceType" value={newRequest.serviceType} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                <option value="ELECTRICIAN">Electrician</option>
-                <option value="PLUMBING">Plumbing</option>
-                <option value="CARPENTER">Carpenter</option>
-                <option value="WEB_DEVELOPER">Web Developer</option>
-                <option value="CLEANER">Cleaner</option>
-                <option value="TUTOR">Tutor</option>
-                <option value="OTHER">Other</option>
+              <select 
+                id="serviceType" 
+                name="serviceType" 
+                value={newRequest.serviceType} 
+                onChange={handleInputChange} 
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                {availableServices.length > 0 ? (
+                    availableServices.map(service => (
+                        <option key={service._id} value={service.name}>{service.name}</option>
+                    ))
+                ) : (
+                    <option value="">Loading services...</option>
+                )}
               </select>
             </div>
             <div className="mb-4">

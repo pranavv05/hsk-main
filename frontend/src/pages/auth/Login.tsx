@@ -6,6 +6,7 @@ export function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    role: "", // Added role
   });
   const [errors, setErrors] = useState<{
     email?: string;
@@ -51,7 +52,7 @@ export function Login() {
     setIsSubmitting(true);
     setErrors({});
     try {
-      const user = await login(formData.email, formData.password);
+      const user = await login(formData.email, formData.password, formData.role);
       // Redirect based on user role
       if (user.role === "admin") {
         navigate("/dashboard/admin");
@@ -138,6 +139,27 @@ export function Login() {
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password}</p>
             )}
+          </div>
+          
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              Login as
+            </label>
+            <select
+              id="role"
+              name="role" // Using a simple name, though we manage it via state manually if needed, or add to formData
+              value={formData.role || ''}
+              onChange={(e) => setFormData({...formData, role: e.target.value})}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Detect automatically (or select role if needed)</option>
+              <option value="user">User</option>
+              <option value="vendor">Vendor</option>
+              <option value="admin">Admin</option>
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              If you have multiple accounts, please select your role.
+            </p>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center">

@@ -108,9 +108,7 @@ export async function fetchVendorProfile() {
 // THIS IS THE CORRECT, FINAL VERSION FOR FILE UPLOADS
 export async function updateVendorProfile(profileData: FormData) {
     try {
-        const response = await apiClient.put('/api/vendors/profile', profileData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const response = await apiClient.put('/api/vendors/profile', profileData);
         return response.data;
     } catch(error: any) {
         throw new Error(error.response?.data?.message || 'Failed to update vendor profile');
@@ -198,6 +196,42 @@ export async function fetchAdminServiceRequests() {
     return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to fetch admin service requests');
+  }
+}
+
+export async function fetchAdminUsers() {
+  try {
+    const response = await apiClient.get('/api/admin/users');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to fetch users');
+  }
+}
+
+export async function deleteServiceRequest(requestId: string) {
+  try {
+    const response = await apiClient.delete(`/api/admin/requests/${requestId}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to delete service request');
+  }
+}
+
+export async function deleteUser(userId: string) {
+  try {
+    const response = await apiClient.delete(`/api/admin/users/${userId}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to delete user');
+  }
+}
+
+export async function deleteVendor(vendorId: string) {
+  try {
+    const response = await apiClient.delete(`/api/admin/vendors/${vendorId}`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.message || 'Failed to delete vendor');
   }
 }
 

@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, role?: string) => Promise<User>;
   register: (userData: any) => Promise<User>;
   logout: () => void;
 }
@@ -53,8 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // --- REWIRED: The login function also calls our backend via apiService ---
-  const login = async (email: string, password: string): Promise<User> => {
-    const loggedInUser = await loginUser(email, password);
+  const login = async (email: string, password: string, role?: string): Promise<User> => {
+    const loggedInUser = await loginUser(email, password, role);
     setUser(loggedInUser); // Set the user state upon successful login
     return loggedInUser;
   };

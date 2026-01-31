@@ -12,9 +12,30 @@ const Value = require('../models/value.model');
 // --- GET /api/public/services ---
 router.get('/services', async (req, res) => {
     try {
-        const services = await Service.find();
-        res.json(services);
+        // Fetch pre-defined services from the database
+        const predefinedServices = await Service.find();
+
+        // Fetch all unique service types that registered vendors have used
+        // We need to require the Vendor model here if not already loaded, but it's best to load it at top.
+        // Assuming strictness, let's just use mongoose.model('Vendor') or require it.
+        const Vendor = require('../models/vendor.model');
+        const vendorServices = await Vendor.distinct('serviceType');
+
+        const existingNames = new Set(predefinedServices.map(s => s.name));
+
+        // Filter out 'OTHER' and any that already exist in the predefined list
+        const customServices = vendorServices
+            .filter(type => type && type !== 'OTHER' && !existingNames.has(type))
+            .map((type, index) => ({
+                _id: `custom-${index}`,
+                name: type,
+                icon: '' // No icon for custom services
+            }));
+
+        const allServices = [...predefinedServices, ...customServices];
+        res.json(allServices);
     } catch (err) {
+        console.error("Error fetching services:", err);
         res.status(500).send('Server Error');
     }
 });
