@@ -203,47 +203,90 @@ export function VendorManagementTable() {
           <p className="text-gray-500">No vendors found.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50/50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Service</th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filteredVendors.map(vendor => (
-                <tr key={vendor._id} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{vendor.fullName}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{vendor.user.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{vendor.serviceType}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                      {vendor.isVerified ? 'Verified' : 'Pending'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-sm font-medium space-x-3">
-                    <button onClick={() => setViewingVendor(vendor)} className="text-indigo-600 hover:text-indigo-900 transition-colors">
-                      View
-                    </button>
-                    <button onClick={() => handleVerificationToggle(vendor._id, vendor.isVerified)} className="text-blue-600 hover:text-blue-800 transition-colors">
-                      {vendor.isVerified ? 'Un-verify' : 'Verify'}
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(vendor._id)} 
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors inline-flex align-middle"
-                      title="Delete Vendor"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/20 overflow-hidden">
+          {/* Desktop Table */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50/50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Name</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Email</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Service</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filteredVendors.map(vendor => (
+                  <tr key={vendor._id} className="hover:bg-blue-50/30 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{vendor.fullName}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{vendor.user.email}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{vendor.serviceType}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {vendor.isVerified ? 'Verified' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-medium space-x-3">
+                      <button onClick={() => setViewingVendor(vendor)} className="text-indigo-600 hover:text-indigo-900 transition-colors">
+                        View
+                      </button>
+                      <button onClick={() => handleVerificationToggle(vendor._id, vendor.isVerified)} className="text-blue-600 hover:text-blue-800 transition-colors">
+                        {vendor.isVerified ? 'Un-verify' : 'Verify'}
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(vendor._id)} 
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors inline-flex align-middle"
+                        title="Delete Vendor"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card Layout */}
+          <div className="md:hidden space-y-4 p-4 bg-gray-50/50">
+            {filteredVendors.map(vendor => (
+              <div key={vendor._id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                 <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                            {vendor.fullName.charAt(0)}
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-gray-900">{vendor.fullName}</h3>
+                            <p className="text-xs text-gray-500">{vendor.serviceType}</p>
+                        </div>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${vendor.isVerified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                        {vendor.isVerified ? 'Verified' : 'Pending'}
+                    </span>
+                 </div>
+                 
+                 <div className="text-sm text-gray-600 mb-4 space-y-1 pl-13">
+                    <p className="truncate">{vendor.user.email}</p>
+                 </div>
+
+                 <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                    <button onClick={() => setViewingVendor(vendor)} className="text-sm font-medium text-indigo-600 p-2">
+                        View Profile
+                    </button>
+                    <div className="flex space-x-2">
+                         <button onClick={() => handleVerificationToggle(vendor._id, vendor.isVerified)} className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-md">
+                            {vendor.isVerified ? 'Un-verify' : 'Verify'}
+                         </button>
+                         <button onClick={() => handleDelete(vendor._id)} className="text-red-500 bg-red-50 p-1.5 rounded-md">
+                            <Trash2 className="w-4 h-4" />
+                         </button>
+                    </div>
+                 </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {viewingVendor && (

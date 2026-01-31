@@ -203,48 +203,76 @@ export function UserDashboard() {
           </div> 
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {serviceRequests.map(request => (
-                  // CHANGED: Use `_id` for the key prop
-                  <tr key={request._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{request.title}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-xs">{request.description}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
-                        {request.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {request.vendorName || 'Not assigned yet'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(request.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <button className="text-blue-600 hover:text-blue-900 mr-2">View</button>
-                      {request.status === 'PENDING' && (
-                        // CHANGED: Use `_id` in the onClick handler
-                        <button onClick={() => handleCancel(request._id)} className="text-red-600 hover:text-red-900">
-                          Cancel
-                        </button>
-                      )}
-                    </td>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {serviceRequests.map(request => (
+                    <tr key={request._id}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{request.title}</div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">{request.description}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
+                          {request.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {request.vendorName || 'Not assigned yet'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(request.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <button className="text-blue-600 hover:text-blue-900 mr-2">View</button>
+                        {request.status === 'PENDING' && (
+                          <button onClick={() => handleCancel(request._id)} className="text-red-600 hover:text-red-900">
+                            Cancel
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4 p-4 bg-gray-50">
+              {serviceRequests.map(request => (
+                <div key={request._id} className="bg-white p-4 rounded-lg shadow border border-gray-200">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-gray-900">{request.title}</h3>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(request.status)}`}>
+                      {request.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{request.description}</p>
+                  <div className="text-xs text-gray-500 mb-3 space-y-1">
+                    <p><strong>Vendor:</strong> {request.vendorName || 'Pending Assignment'}</p>
+                    <p><strong>Date:</strong> {new Date(request.createdAt).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex justify-end space-x-3 pt-2 border-t border-gray-100">
+                    <button className="text-sm text-blue-600 font-medium">View Details</button>
+                    {request.status === 'PENDING' && (
+                      <button onClick={() => handleCancel(request._id)} className="text-sm text-red-600 font-medium">
+                        Cancel Request
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
